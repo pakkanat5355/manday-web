@@ -1,0 +1,1534 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Man-Day Estimator</title>
+<script async src="https://cdn.jsdelivr.net/npm/sweetalert2@11.14.5/dist/sweetalert2.all.min.js"></script>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #f6f6f7; --surface: #ffffff; --hover: #f4f4f5; --field: #f4f4f5;
+    --ink: #18181b; --muted: #71717a; --line: #e4e4e7;
+    --focus: #2563eb; --ok: #15803d; --amber: #b45309; --violet: #7c3aed; --warn-bg: #fdf6e3; --warn: #7c5a0a; --danger: #b91c1c;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0e0f11; --surface: #16171a; --hover: #1d1e22; --field: #1b1c20;
+    --ink: #e8e8ea; --muted: #8c8c95; --line: #2a2b30;
+    --focus: #7aa2ff; --ok: #4ade80; --amber: #fbbf24; --violet: #a78bfa; --warn-bg: #2a2412; --warn: #e2c275; --danger: #f87171;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 13px/1.45 "Segoe UI Variable Text", "Segoe UI", "Leelawadee UI", Tahoma, sans-serif; -webkit-font-smoothing: antialiased; }
+
+  /* Top bar */
+  header { position: sticky; top: 0; z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); }
+  .bar { max-width: 1320px; margin: 0 auto; padding: 0 16px; min-height: 44px; display: flex; flex-wrap: wrap; align-items: center; gap: 0 22px; }
+  .brand { font-weight: 600; letter-spacing: -.01em; white-space: nowrap; }
+  nav { display: flex; align-self: stretch; }
+  nav button { border: 0; background: none; font: inherit; color: var(--muted); height: 44px; padding: 0 11px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; }
+  nav button:hover { color: var(--ink); }
+  nav button.on { color: var(--ink); border-bottom-color: var(--ink); font-weight: 600; }
+  .actions { margin-left: auto; display: flex; align-items: center; gap: 2px; flex-wrap: wrap; }
+  .sep { width: 1px; height: 16px; background: var(--line); margin: 0 6px; }
+  main { max-width: 1320px; margin: 0 auto; padding: 16px; }
+
+  /* Controls */
+  .btn { height: 28px; padding: 0 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 6px; font: inherit; cursor: pointer; white-space: nowrap; }
+  .btn:hover { background: var(--hover); }
+  .btn.primary { background: var(--ink); border-color: var(--ink); color: var(--surface); font-weight: 600; }
+  .btn.primary:hover { opacity: .86; }
+  .btn.ghost { border-color: transparent; background: none; color: var(--muted); }
+  .btn.ghost:hover { color: var(--ink); background: var(--hover); }
+  input, select, textarea { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; height: 28px; padding: 0 8px; }
+  input[type="checkbox"] { height: auto; padding: 0; margin: 0; accent-color: var(--ink); }
+  textarea { display: block; width: 100%; height: auto; min-height: 140px; padding: 8px 10px; font: 12px/1.6 Consolas, "Cascadia Mono", monospace; resize: vertical; }
+  input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px solid var(--focus); outline-offset: -1px; }
+  label.f { display: block; font-size: 11.5px; color: var(--muted); }
+  label.f input, label.f select { display: block; width: 100%; margin-top: 3px; }
+  .fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+  .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .hint { color: var(--muted); font-size: 11.5px; }
+  p.hint { margin: 8px 2px 0; }
+  .warn { background: var(--warn-bg); color: var(--warn); border-radius: 6px; padding: 8px 12px; margin-bottom: 12px; font-size: 12px; }
+  #toast { color: var(--muted); font-size: 11.5px; }
+
+  /* Cards + tables */
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+  .card.pad { padding: 14px; }
+  .card h3 { margin: 0 0 10px; font-size: 12px; font-weight: 600; }
+  .stack > * + * { margin-top: 12px; }
+  .cols2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; align-items: start; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { padding: 6px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; }
+  th { font-size: 11.5px; color: var(--muted); font-weight: 500; }
+  tr:last-child > td { border-bottom: 0; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .strong { font-weight: 600; }
+  #secOpts th, #secOpts td { padding: 5px 6px; }
+  #secOpts th { white-space: nowrap; }
+  #secOpts td:last-child { text-align: center; }
+  #secOpts th:first-child, #secOpts td:first-child { padding-left: 0; }
+  #secOpts input[type="number"] { width: 64px; text-align: right; }
+
+  /* 1. Sale summary */
+  .quote-wrap { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 16px; align-items: start; }
+  @media (max-width: 880px) { .quote-wrap { grid-template-columns: 1fr; } }
+  .sheet { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 36px 44px; max-width: 720px; font-size: 14px; }
+  .q-title { font-size: 19px; font-weight: 600; letter-spacing: -.01em; margin: 0 0 2px; }
+  .q-meta { color: var(--muted); font-size: 12px; margin-bottom: 20px; min-height: 4px; }
+  .q-sec { padding: 10px 0; border-top: 1px solid var(--line); break-inside: avoid; }
+  .q-row { display: flex; justify-content: space-between; gap: 24px; font-weight: 600; }
+  .q-row span:last-child, .q-total span:last-child { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .q-sec ul { margin: 4px 0 0; padding-left: 20px; color: var(--muted); }
+  .q-total { display: flex; justify-content: space-between; border-top: 1.5px solid var(--ink); padding-top: 12px; font-size: 16px; font-weight: 700; }
+  .q-empty { color: var(--muted); }
+  .q-remark { display: flex; gap: 14px; margin-top: 18px; font-size: 13px; break-inside: avoid; }
+  .q-remark span { font-weight: 600; }
+  .q-remark div { white-space: pre-wrap; overflow-wrap: anywhere; color: var(--muted); }
+  textarea.plain { font: inherit; min-height: 62px; margin-top: 3px; padding: 6px 8px; }
+
+  /* 2. Task list: one compact line per task, details fold out underneath */
+  .tgrid { display: grid; grid-template-columns: 26px minmax(0, 1.9fr) minmax(0, 2.3fr) minmax(0, .85fr) 52px 52px 52px 112px 16px 58px 30px 26px 26px; gap: 0 4px; align-items: center; padding: 0 8px; }
+  .thead { height: 32px; border-bottom: 1px solid var(--line); font-size: 11.5px; color: var(--muted); }
+  .thead span { padding: 0 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .trow { border-bottom: 1px solid var(--line); position: relative; }
+  .trow:hover { background: var(--hover); }
+  .tmain { height: 34px; }
+  .idx { color: var(--muted); text-align: right; padding-right: 4px; font-variant-numeric: tabular-nums; }
+  .cell { width: 100%; min-width: 0; height: 26px; padding: 0 6px; border-color: transparent; background-color: transparent; border-radius: 4px; text-overflow: ellipsis; }
+  .cell:hover { border-color: var(--line); }
+  .cell:focus { border-color: var(--line); background-color: var(--surface); }
+  .cell.num { -moz-appearance: textfield; }
+  .cell.num::-webkit-inner-spin-button, .cell.num::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  .cell::placeholder { color: var(--muted); opacity: .55; }
+  .final { font-weight: 600; padding-right: 7px; }
+  .trow.nc .final { color: var(--muted); text-decoration: line-through; font-weight: 400; }
+  .flag { color: var(--danger); font-size: 11px; font-weight: 700; text-align: center; cursor: help; }
+  .nccell { display: flex; justify-content: center; }
+  .icon { width: 24px; height: 24px; border: 0; border-radius: 4px; background: none; color: var(--muted); cursor: pointer; font-size: 12px; line-height: 1; padding: 0; }
+  .icon:hover { background: var(--line); color: var(--ink); }
+  .icon.del { font-size: 16px; }
+  .icon.del:hover { color: var(--danger); }
+  .trow.open [data-toggle] { transform: rotate(180deg); }
+  .tmore { display: none; flex-wrap: wrap; align-items: center; gap: 6px 20px; padding: 2px 12px 10px 42px; font-size: 11.5px; color: var(--muted); }
+  .trow.open .tmore { display: flex; }
+  .tmore label { display: flex; align-items: center; gap: 6px; }
+  .tmore .combo { height: 26px; width: 210px; }
+  .tmore b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .tbar { display: flex; align-items: center; gap: 6px; padding: 8px 10px; flex-wrap: wrap; }
+  .tbar .total { margin-left: auto; padding-right: 6px; }
+  .tbar .total b { font-size: 14px; font-variant-numeric: tabular-nums; }
+  .tempty { padding: 22px; text-align: center; color: var(--muted); }
+  @media (max-width: 860px) {
+    .thead { display: none; }
+    .tmain { height: auto; padding-top: 6px; padding-bottom: 6px; grid-template-columns: 26px minmax(0, 1fr) 52px 52px 52px 16px 58px 26px; gap: 2px 4px; }
+    .tmain [data-combo="act"], .tmain [data-f="desc"], .tmain [data-combo="owner"], .tmain [data-combo="risk"] { grid-column: 2 / -1; }
+    .tmain .idx { grid-row: 1; }
+  }
+
+  /* Project plan: editable rows + a timeline that scales to the available width */
+  .pgrid { display: grid; grid-template-columns: 26px minmax(0, 1.25fr) 104px 104px 44px 122px 44px 58px minmax(0, 1.5fr) 26px; gap: 0 4px; align-items: center; padding: 0 8px; }
+  .prow { height: 34px; border-bottom: 1px solid var(--line); position: relative; }
+  .prow:hover { background: var(--hover); }
+  .prow.grp { background: var(--field); }
+  .prow.grp [data-p="name"] { font-weight: 600; }
+  .prow input[type="date"] { padding: 0 4px; }
+  .pend { color: var(--muted); padding: 0 7px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .ptrack { position: relative; height: 14px; margin: 0 6px; }
+  .pbar { position: absolute; top: 0; bottom: 0; min-width: 3px; border-radius: 3px; overflow: hidden; background: color-mix(in srgb, var(--c) 26%, transparent); }
+  .pbar i { display: block; height: 100%; background: var(--c); }
+  .s-idle { --c: var(--muted); } .s-run { --c: var(--focus); } .s-risk { --c: var(--amber); } .s-late { --c: var(--danger); } .s-test { --c: var(--violet); } .s-done { --c: var(--ok); }
+  .pbar.s-grp { --c: var(--ink); top: 5px; bottom: 5px; border-radius: 2px; }
+  .pmonths { position: relative; align-self: stretch; margin: 0 6px; }
+  .pmonths span { position: absolute; top: 0; bottom: 0; display: flex; align-items: center; padding: 0 5px; border-left: 1px solid var(--line); }
+  .has-today .ptrack::before { content: ''; position: absolute; top: -10px; bottom: -10px; left: var(--today); width: 1px; background: var(--danger); opacity: .45; }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+  .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; background: var(--c); margin-right: 5px; }
+  @media (max-width: 980px) {
+    .pgrid { grid-template-columns: 26px minmax(0, 1fr) 90px 96px 44px 122px 44px 58px 26px; }
+    .ptrack, .pmonths { display: none; }
+  }
+
+  /* Sharing: who is in the room, and which row each person is on */
+  .avs { display: flex; align-items: center; padding-right: 2px; }
+  .av { width: 24px; height: 24px; margin-left: -5px; border-radius: 50%; border: 2px solid var(--surface); color: #fff; font-size: 10px; font-weight: 600; display: flex; align-items: center; justify-content: center; cursor: default; }
+  .av:first-child { margin-left: 0; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); margin: 0 6px 0 4px; }
+  .dot.off { background: var(--danger); }
+  .who { position: absolute; left: 2px; top: -8px; z-index: 2; padding: 0 5px; border-radius: 3px; color: #fff; font-size: 10px; line-height: 15px; white-space: nowrap; pointer-events: none; }
+  div.swal2-popup.sw .swal2-input { width: 100%; height: 32px; margin: 12px 0 0; padding: 0 10px; font-size: 13px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; box-shadow: none; }
+  div.swal2-popup.sw .swal2-validation-message { background: none; color: var(--danger); font-size: 12px; margin: 6px 0 0; padding: 0; }
+
+  /* Searchable dropdown: a text input + one shared popup list */
+  .combo { cursor: default; padding-right: 20px; text-overflow: ellipsis; background-repeat: no-repeat; background-position: right 7px center;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M1 1l3 3 3-3' fill='none' stroke='%23888' stroke-width='1.3'/%3E%3C/svg%3E"); }
+  .combo:focus { cursor: text; }
+  .combo::placeholder { color: var(--muted); opacity: .7; }
+  #comboPop { position: fixed; z-index: 20; min-width: 200px; max-height: 280px; overflow-y: auto; padding: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 8px 24px rgba(0, 0, 0, .16); }
+  .co { display: flex; justify-content: space-between; gap: 18px; padding: 5px 8px; border-radius: 5px; cursor: pointer; white-space: nowrap; }
+  .co.hi { background: var(--line); }
+  .co.sel { font-weight: 600; }
+  .co .cd { color: var(--muted); font-size: 11.5px; }
+  .cg { padding: 7px 8px 2px; font-size: 11px; color: var(--muted); }
+  .cnone { padding: 8px; color: var(--muted); }
+
+  /* SweetAlert2 dialogs, restyled to follow the app theme */
+  div.swal2-popup.sw { background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; font: inherit; padding: 20px 20px 16px; }
+  div.swal2-popup.sw .swal2-title { font-size: 16px; font-weight: 600; color: var(--ink); padding-top: 8px; }
+  div.swal2-popup.sw .swal2-html-container { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  div.swal2-popup.sw .swal2-actions { gap: 8px; margin-top: 16px; }
+  div.swal2-popup.sw .swal2-icon { transform: scale(.62); margin: 0 auto -6px; }
+  div.swal2-popup.sw.swal2-toast { padding: 8px 14px; box-shadow: 0 8px 24px rgba(0, 0, 0, .16); }
+  div.swal2-popup.sw.swal2-toast .swal2-title { font-size: 13px; font-weight: 500; padding: 0; margin: 0 0 0 8px; }
+  div.swal2-popup.sw.swal2-toast .swal2-icon { transform: scale(.55); margin: 0; }
+
+  /* 4. Settings */
+  #tab-settings :disabled { background-color: var(--field); color: var(--ink); opacity: 1; cursor: default; }
+
+  @media print {
+    @page { size: A4; margin: 18mm; }
+    :root, :root[data-theme="dark"] { color-scheme: light; --bg: #fff; --surface: #fff; --ink: #000; --muted: #444; --line: #c8c8c8; }
+    header, .noprint, .tab { display: none !important; }
+    #tab-quote { display: block !important; }
+    main { padding: 0; max-width: none; }
+    .quote-wrap { display: block; }
+    .sheet { border: 0; padding: 0; max-width: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="bar">
+    <span class="brand">Man-Day Estimator</span>
+    <nav>
+      <button data-tab="quote" class="on">สรุปให้ Sale</button>
+      <button data-tab="tasks">Task Breakdown</button>
+      <button data-tab="plan">Project Plan</button>
+      <button data-tab="owners">Owner / Dept</button>
+      <button data-tab="settings">ตั้งค่า</button>
+    </nav>
+    <div class="actions">
+      <button class="btn ghost" id="btnExcel" title="Excel พร้อมสูตร หน้าตาแบบ template เดิม">Export Excel</button>
+      <button class="btn ghost" id="btnExport" title="ไฟล์สำหรับ Import กลับเข้า app นี้">Export JSON</button>
+      <button class="btn ghost" id="btnImport" title="เปิดไฟล์ .json ที่ Export ไว้">Import</button>
+      <button class="btn ghost" id="btnNew">โปรเจกต์ใหม่</button>
+      <span class="sep"></span>
+      <span class="avs" id="collabUsers"></span>
+      <span class="dot" id="syncDot" hidden></span>
+      <button class="btn" id="btnShare" title="สร้างลิงก์ให้คนอื่นเข้ามากรอกร่วมกัน">Share</button>
+      <button class="btn ghost" id="btnLeave" hidden>ออกจากห้อง</button>
+      <span class="sep"></span>
+      <button class="btn ghost" id="btnTheme" title="สลับ Light / Dark">Dark</button>
+      <input type="file" id="fileImport" accept=".json,application/json" hidden>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- 1. Quote -->
+  <section class="tab" id="tab-quote">
+    <div class="quote-wrap">
+      <div class="noprint stack">
+        <div class="card pad">
+          <h3>ข้อมูลโปรเจกต์</h3>
+          <div class="fields">
+            <label class="f">Customer <input data-meta="customer" placeholder="CHUBB"></label>
+            <label class="f">Project / CR <input data-meta="project" placeholder="CR Voice Transcription"></label>
+            <label class="f">Job ID <input data-meta="jobId"></label>
+            <label class="f">Date <input type="date" data-meta="date"></label>
+          </div>
+          <label class="f" style="margin-top:10px">Remark (แสดงใต้ Total, เว้นว่าง = -)
+            <textarea class="plain" data-meta="remark" rows="3" placeholder="-"></textarea></label>
+          <div class="row" style="margin-top:14px">
+            <button class="btn primary" id="btnPrint">Print / Save PDF</button>
+            <button class="btn" id="btnCopy">Copy เป็นข้อความ</button>
+            <span id="toast"></span>
+          </div>
+        </div>
+        <div id="quoteWarn"></div>
+        <div class="card pad">
+          <h3>การแสดงผลแต่ละหมวด</h3>
+          <table id="secOpts"></table>
+          <p class="hint">ปรับเอง: เว้นว่าง = ใช้ค่าที่คำนวณได้</p>
+        </div>
+      </div>
+      <div class="sheet" id="sheet"></div>
+    </div>
+  </section>
+
+  <!-- 2. Tasks -->
+  <section class="tab" id="tab-tasks" hidden>
+    <div class="card">
+      <div class="tgrid thead">
+        <span class="num">#</span>
+        <span>Breakdown Activity</span>
+        <span>Description (แสดงในใบสรุป)</span>
+        <span>Owner</span>
+        <span class="num" title="Optimistic: ทุกอย่างราบรื่น (ชั่วโมง)">O</span>
+        <span class="num" title="Most likely: สถานการณ์ปกติ (ชั่วโมง)">M</span>
+        <span class="num" title="Pessimistic: กรณีแย่สุด (ชั่วโมง)">P</span>
+        <span>Risk</span>
+        <span></span>
+        <span class="num" title="(O + 4M + P) / 6 × (1 + Risk) ปัดขึ้นทีละ 0.5">MH</span>
+        <span title="ไม่คิดเงิน: ไม่นับในใบสรุปให้ Sale" style="padding:0;text-align:center">N/C</span>
+        <span></span><span></span>
+      </div>
+      <div id="taskList"></div>
+      <div class="tbar">
+        <button class="btn primary" id="btnAdd">+ เพิ่มงาน</button>
+        <button class="btn ghost" id="btnExpand">แสดงรายละเอียดทั้งหมด</button>
+        <span class="total"><span class="hint" id="sumRaw"></span> &nbsp; รวม <b id="sumFinal"></b></span>
+      </div>
+    </div>
+    <p class="hint">O / M / P กรอกเป็นชั่วโมง · MH = (O + 4M + P) / 6 × (1 + Risk) ปัดขึ้นทีละ 0.5 · กด ▾ ท้ายแถวเพื่อซ่อน / แสดง Role, Situation, Suggest P และ SD · <b style="color:var(--danger)">H</b> = SD ≥ 50% ของ MH ควรพิจารณาเพิ่ม Risk</p>
+  </section>
+
+  <!-- Project plan -->
+  <section class="tab stack" id="tab-plan" hidden>
+    <div class="row">
+      <label class="hint" style="display:flex;align-items:center;gap:6px">เริ่มโครงการ <input type="date" id="planStart"></label>
+      <button class="btn primary" id="btnPlanGen">สร้างจากงานที่กรอกอยู่</button>
+      <button class="btn" id="btnPlanImport">สร้างจากไฟล์ JSON</button>
+      <input type="file" id="filePlan" accept=".json,application/json" hidden>
+      <span class="hint" id="planSummary" style="margin-left:auto"></span>
+    </div>
+    <div class="card" id="planCard">
+      <div class="pgrid thead">
+        <span class="num">#</span><span>Task</span><span>PIC</span><span>Status</span><span class="num">%</span><span>Start</span>
+        <span class="num" title="จำนวนวันทำการ">Days</span><span>End</span><div class="pmonths" id="planMonths"></div><span></span>
+      </div>
+      <div id="planList"></div>
+      <div class="tbar">
+        <button class="btn" id="btnPlanAdd">+ เพิ่มงาน</button>
+        <button class="btn ghost" id="btnPlanGroup">+ เพิ่มหัวข้อ</button>
+        <span class="hint legend" style="margin-left:auto">
+          <span class="s-idle"><i></i>Not Start / Pending</span><span class="s-run"><i></i>On Going</span><span class="s-test"><i></i>Testing</span>
+          <span class="s-risk"><i></i>At Risk</span><span class="s-late"><i></i>Delay</span><span class="s-done"><i></i>Completed</span>
+        </span>
+      </div>
+    </div>
+    <p class="hint">แผนเริ่มต้นเรียงงานต่อกันตามลำดับหมวด โดยคิด 1 วัน = ชั่วโมงต่อ Man-day ในหน้าตั้งค่า และข้ามเสาร์-อาทิตย์ (ไม่ข้ามวันหยุดนักขัตฤกษ์) · แก้ Start / Days / PIC ของแต่ละงานได้เอง · เปลี่ยนวันเริ่มโครงการ = เลื่อนทุกงานตาม · ส่วนทึบในแถบ = Progress</p>
+  </section>
+
+  <!-- 3. Owners -->
+  <section class="tab" id="tab-owners" hidden>
+    <div class="cols2">
+      <div class="card"><table id="ownerTable"></table></div>
+      <div class="card"><table id="deptTable"></table></div>
+    </div>
+    <p class="hint">รวมทุกงาน (รวมงานที่ติ๊ก N/C ด้วย เพราะเป็น workload จริง)</p>
+  </section>
+
+  <!-- 4. Settings -->
+  <section class="tab stack" id="tab-settings" hidden>
+    <div class="row">
+      <button class="btn primary" id="btnCfgEdit">Edit</button>
+      <button class="btn primary" id="btnCfgSave" hidden>บันทึก</button>
+      <button class="btn" id="btnCfgCancel" hidden>ยกเลิก</button>
+      <span class="hint" id="cfgState" style="margin-left:6px"></span>
+    </div>
+    <div class="card pad">
+      <h3>การคำนวณ</h3>
+      <div class="fields" style="max-width:520px">
+        <label class="f">ชั่วโมงต่อ 1 Man-day <input type="number" min="1" step="0.5" data-cfg="hpd"></label>
+        <label class="f">ปัด Man-day ของแต่ละหมวดขึ้นทีละ
+          <input data-cfg="mdStep" data-combo="mdStep" autocomplete="off">
+        </label>
+      </div>
+    </div>
+    <div class="cols2">
+      <div class="card pad"><h3>หมวด / Breakdown Activity</h3><textarea data-list="sections" style="min-height:320px"></textarea><p class="hint">ขึ้นต้น # = ชื่อหมวด, บรรทัดถัดไป = activity ในหมวดนั้น</p></div>
+      <div class="card pad"><h3>Task Owner</h3><textarea data-list="owners" style="min-height:320px"></textarea><p class="hint">ชื่อ | แผนก</p></div>
+      <div class="card pad"><h3>Role</h3><textarea data-list="roles" style="min-height:250px"></textarea><p class="hint">Role | multiplier (ใช้คำนวณ Suggest P)</p></div>
+      <div class="card pad"><h3>Situation</h3><textarea data-list="situations" style="min-height:80px"></textarea><p class="hint">Situation | multiplier (ใช้คำนวณ Suggest P)</p>
+        <h3 style="margin-top:16px">Risk</h3><textarea data-list="risks" style="min-height:92px"></textarea><p class="hint">ระดับ | % ที่บวกเพิ่ม</p></div>
+    </div>
+  </section>
+</main>
+
+<script>
+const KEY = 'manday-estimator-v1';
+const SEP = '||';
+
+const DEFAULT_CFG = {
+  hpd: 8,
+  mdStep: 0.25,
+  sections: [
+    { name: 'Project Management & Requirement', items: ['Project Management', 'Requirement Workshop', 'FRS Preparation'] },
+    { name: 'Implementation', items: ['Development / Configuration / Unit Test'] },
+    { name: 'System Testing & UAT', items: ['System Integration / E2E Test', 'Test Script Preparation', 'UAT Preparation & Training & Handout', 'UAT Support'] },
+    { name: 'Deployment & Go-Live', items: ['Deployment Document', 'UAT Deployment', 'Production Deployment', 'Go-Live Support', 'On-Site Standby', 'On-Call Standby'] },
+    { name: 'Training & Handover', items: ['Application Training', 'Training Material / Handout', 'Knowledge Transfer', 'Final Documentation'] }
+  ],
+  roles: [
+    ['Developer (Config)', 1.3], ['Developer (Feature build)', 1.5], ['Developer (Integration)', 2],
+    ['Business & System Analyst (BA&SA)', 2.2], ['Solution Architect', 2.5], ['QA / Tester', 1.6],
+    ['UAT Support', 1.8], ['Infra / DevOps', 1.7], ['Telephony Engineer', 1.3], ['Project Manager', 2],
+    ['Trainer', 1.5], ['Documentation', 1.4]
+  ],
+  situations: [['Clear requirement', 1.5], ['Some uncertainty', 2], ['Integration / new system', 3]],
+  risks: [['No Risk', 0], ['Low', 5], ['Medium', 10], ['High', 20]],
+  owners: [
+    ['Chatree', 'ISD'], ['Monchanaok', 'ISD'], ['Parnupat', 'ISD'], ['Arthid', 'ISD'], ['Apinya', 'ISD'], ['Atiwan', 'ISD'],
+    ['Thanadech', 'ISD'], ['Wisarut', 'ISD'], ['Onrampa', 'ISD'], ['Pornchita', 'ISD'], ['Touch', 'ISD'],
+    ['Korapat', 'SQA'], ['Sompit', 'SQA'], ['Nuntida', 'SQA'], ['Sutamas', 'SQA'],
+    ['Apichet', 'CCS'], ['Tichakorn', 'CCS'], ['Thanavat', 'CCS'], ['Katathep', 'CCS'], ['Pakin', 'CCS'],
+    ['Thanarit', 'IFS'], ['Akarachai', 'IFS'], ['Sorasak', 'IFS'],
+    ['Pakkanat', 'BSS'], ['Sarayut', 'BSS'], ['Apichat', 'BSS'], ['Jirat', 'BSS'], ['Ronachai', 'BSS'], ['Sombat', 'BSS'], ['On-site Support', 'BSS'],
+    ['Nidchpapha', 'PMD'], ['Chonlada', 'PMD'], ['Krissa', 'PMD'],
+    ['Peerapat', 'CAC'], ['Thanchanok', 'CAC']
+  ]
+};
+
+function clone(o) { return JSON.parse(JSON.stringify(o)); }
+function today() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function newId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+function newTask() { return { id: newId(), act: '', desc: '', owner: '', role: '', sit: '', o: '', m: '', p: '', risk: 0, nc: false }; }
+function blankState() {
+  return { meta: { customer: '', project: '', jobId: '', date: today(), remark: '' }, cfg: clone(DEFAULT_CFG), tasks: [newTask()], secOpt: {}, plan: { start: today(), rows: [] } };
+}
+function normalize(raw) {
+  const s = blankState();
+  if (!raw || typeof raw !== 'object') return s;
+  Object.assign(s.meta, raw.meta || {});
+  Object.assign(s.cfg, raw.cfg || {});
+  if (Array.isArray(raw.tasks)) s.tasks = raw.tasks.map(t => Object.assign(newTask(), t));
+  s.secOpt = raw.secOpt || {};
+  if (raw.plan && Array.isArray(raw.plan.rows)) s.plan = { start: raw.plan.start || s.plan.start, rows: raw.plan.rows };
+  return s;
+}
+
+// ---------- calculation ----------
+function num(v) { const n = parseFloat(v); return isFinite(n) ? n : 0; }
+function ceilTo(x, step) { return Math.round(Math.ceil(x / step - 1e-9) * step * 1e6) / 1e6; }
+function fmt(n) { return String(+(+n).toFixed(2)); }
+function lookup(pairs, key) { const hit = pairs.find(p => p[0] === key); return hit ? hit[1] : null; }
+
+function calcTask(t, cfg) {
+  const o = num(t.o), m = num(t.m), p = num(t.p);
+  const pert = (o + 4 * m + p) / 6;
+  const raw = ceilTo(pert, 0.25);
+  const roleMult = lookup(cfg.roles, t.role), sitMult = lookup(cfg.situations, t.sit);
+  const sd = (p - o) / 6;
+  const has = o > 0 || m > 0 || p > 0;
+  return {
+    has, raw, sd,
+    sugRole: roleMult && m ? ceilTo(roleMult * m, 0.5) : null,
+    sugSit: sitMult && m ? sitMult * m : null,
+    sugRisk: !has ? '' : (sd >= 0.5 * raw ? 'H' : 'L / M'),
+    final: ceilTo((1 + num(t.risk)) * pert, 0.5),
+    dept: lookup(cfg.owners, t.owner) || ''
+  };
+}
+
+function sectionOf(t, cfg) {
+  const name = String(t.act || '').split(SEP)[0];
+  return cfg.sections.some(s => s.name === name) ? name : null;
+}
+
+// Sale summary: one entry per section that has chargeable hours
+function buildQuote(state) {
+  const cfg = state.cfg, out = [], unassigned = { count: 0, mh: 0 };
+  const bySec = {};
+  state.tasks.forEach(t => {
+    const c = calcTask(t, cfg);
+    if (!c.final) return;
+    const sec = sectionOf(t, cfg);
+    if (!sec) { unassigned.count++; unassigned.mh += c.final; return; }
+    if (t.nc) return;
+    const b = bySec[sec] || (bySec[sec] = { mh: 0, lines: [] });
+    b.mh += c.final;
+    const line = (t.desc || '').trim() || String(t.act).split(SEP)[1] || '';
+    if (line && !b.lines.includes(line)) b.lines.push(line);
+  });
+  cfg.sections.forEach((s, i) => {
+    const b = bySec[s.name];
+    if (!b) return;
+    const opt = secOption(state, s.name, i);
+    const auto = ceilTo(b.mh / cfg.hpd, cfg.mdStep);
+    const override = opt.override !== '' && opt.override != null && isFinite(parseFloat(opt.override));
+    out.push({ name: s.name, mh: b.mh, auto, md: override ? parseFloat(opt.override) : auto, lines: opt.hide ? [] : b.lines });
+  });
+  const total = Math.round(out.reduce((a, s) => a + s.md, 0) * 1e6) / 1e6;
+  return { sections: out, total, unassigned };
+}
+// Default: the first section (PM & Requirement) shows no sub-lines
+function secOption(state, name, index) {
+  return Object.assign({ hide: index === 0, override: '' }, state.secOpt[name] || {});
+}
+function unit(n) { return n > 1 ? 'Man-days' : 'Man-day'; }
+function quoteTitle(meta) { return [meta.customer, meta.project].map(x => (x || '').trim()).filter(Boolean).join(' - ') || 'Man-Day Estimation'; }
+function remarkText(meta) { return (meta.remark || '').trim() || '-'; }
+function quoteText(state) {
+  const q = buildQuote(state), lines = [quoteTitle(state.meta)];
+  q.sections.forEach(s => {
+    lines.push(s.name + '      ' + fmt(s.md) + ' ' + unit(s.md));
+    s.lines.forEach(l => lines.push(l));
+  });
+  lines.push('Total ' + fmt(q.total) + ' ' + unit(q.total));
+  lines.push('Remark: ' + remarkText(state.meta));
+  return lines.join('\n');
+}
+
+// ---------- settings text <-> lists ----------
+function pairsToText(pairs) { return pairs.map(p => p[0] + ' | ' + p[1]).join('\n'); }
+function textToPairs(text, numeric) {
+  return text.split('\n').map(l => l.split('|').map(x => x.trim())).filter(a => a[0])
+    .map(a => [a[0], numeric ? num(a[1]) : (a[1] || '')]);
+}
+function sectionsToText(secs) { return secs.map(s => '# ' + s.name + '\n' + s.items.join('\n')).join('\n\n'); }
+function textToSections(text) {
+  const secs = [];
+  text.split('\n').map(l => l.trim()).filter(Boolean).forEach(l => {
+    if (l[0] === '#') secs.push({ name: l.slice(1).trim(), items: [] });
+    else if (secs.length) secs[secs.length - 1].items.push(l);
+  });
+  return secs.filter(s => s.name);
+}
+
+// ---------- Shared rooms: edits travel as small operations so two people can work on different rows at once ----------
+// Keep applyOps() in sync with netlify/lib/room-core.mjs
+function applyOps(doc, ops) {
+  const bad = k => k === '__proto__' || k === 'constructor' || k === 'prototype';
+  const listOf = n => (n === 'tasks' ? doc.tasks : n === 'plan' ? doc.plan.rows : null);
+  ops.forEach(op => {
+    if (!op || typeof op !== 'object') return;
+    if (op.t === 'meta' || op.t === 'cfg' || op.t === 'sec') {
+      const target = op.t === 'meta' ? doc.meta : op.t === 'cfg' ? doc.cfg : doc.secOpt;
+      if (typeof op.k !== 'string' || bad(op.k)) return;
+      if (op.v === undefined) delete target[op.k]; else target[op.k] = op.v;
+    } else if (op.t === 'planStart') {
+      doc.plan.start = op.v;
+    } else {
+      const list = listOf(op.list);
+      if (!list) return;
+      if (op.t === 'add') {
+        if (!op.v || typeof op.v.id !== 'string' || list.some(r => r.id === op.v.id)) return;
+        const i = list.findIndex(r => r.id === op.after);
+        list.splice(op.after == null ? 0 : (i < 0 ? list.length : i + 1), 0, op.v);
+      } else if (op.t === 'del') {
+        const i = list.findIndex(r => r.id === op.id);
+        if (i >= 0) list.splice(i, 1);
+      } else if (op.t === 'row') {
+        const r = list.find(x => x.id === op.id);
+        if (!r || typeof op.f !== 'string' || bad(op.f) || op.f === 'id') return;
+        r[op.f] = op.v;
+      }
+    }
+  });
+  return doc;
+}
+// The operations that turn state `a` into state `b`
+function diffState(a, b) {
+  const ops = [], same = (x, y) => JSON.stringify(x) === JSON.stringify(y);
+  const keys = (x, y) => Array.from(new Set(Object.keys(x || {}).concat(Object.keys(y || {}))));
+  [['meta', a.meta, b.meta], ['cfg', a.cfg, b.cfg], ['sec', a.secOpt, b.secOpt]].forEach(g =>
+    keys(g[1], g[2]).forEach(k => { if (!same(g[1][k], g[2][k])) ops.push({ t: g[0], k, v: g[2][k] }); }));
+  if (a.plan.start !== b.plan.start) ops.push({ t: 'planStart', v: b.plan.start });
+  [['tasks', a.tasks, b.tasks], ['plan', a.plan.rows, b.plan.rows]].forEach(g => {
+    const list = g[0], before = new Map(g[1].map(r => [r.id, r])), after = new Set(g[2].map(r => r.id));
+    g[1].forEach(r => { if (!after.has(r.id)) ops.push({ t: 'del', list, id: r.id }); });
+    g[2].forEach((r, i) => {
+      const old = before.get(r.id);
+      if (!old) ops.push({ t: 'add', list, v: r, after: i ? g[2][i - 1].id : null });
+      else keys(old, r).forEach(f => { if (f !== 'id' && !same(old[f], r[f])) ops.push({ t: 'row', list, id: r.id, f, v: r[f] }); });
+    });
+  });
+  return ops;
+}
+// Two edits to the same field collapse into the later one (typing produces one per keystroke)
+function opKey(op) {
+  if (op.t === 'meta' || op.t === 'cfg' || op.t === 'sec') return op.t + '|' + op.k;
+  if (op.t === 'row') return 'row|' + op.list + '|' + op.id + '|' + op.f;
+  return op.t === 'planStart' ? 'planStart' : null;
+}
+
+// ---------- Project plan (dates are 'YYYY-MM-DD' strings; weekends are skipped, public holidays are not) ----------
+const PLAN_STATUS = ['Not Start', 'On Going', 'At Risk', 'Delay', 'Pending', 'Testing', 'Completed'];
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+function parseD(s) { const p = String(s).split('-').map(Number); return new Date(Date.UTC(p[0], p[1] - 1, p[2])); }
+function fmtD(d) { return d.toISOString().slice(0, 10); }
+function validD(s) { return /^\d{4}-\d{2}-\d{2}$/.test(s || '') && !isNaN(parseD(s)); }
+function dayNum(s) { return Math.round(parseD(s) / 86400000); }
+function isWeekend(d) { const g = d.getUTCDay(); return g === 0 || g === 6; }
+function nextWorkday(s) { const d = parseD(s); while (isWeekend(d)) d.setUTCDate(d.getUTCDate() + 1); return fmtD(d); }
+function addWorkdays(s, n) {
+  const d = parseD(nextWorkday(s)), step = n < 0 ? -1 : 1;
+  for (let k = Math.abs(n); k > 0;) { d.setUTCDate(d.getUTCDate() + step); if (!isWeekend(d)) k--; }
+  return fmtD(d);
+}
+function workdayDiff(a, b) {           // working days from a to b (negative when b is earlier)
+  a = nextWorkday(a); b = nextWorkday(b);
+  if (a === b) return 0;
+  const sign = a < b ? 1 : -1, d = parseD(sign > 0 ? a : b), end = sign > 0 ? b : a;
+  let n = 0;
+  while (fmtD(d) < end) { d.setUTCDate(d.getUTCDate() + 1); if (!isWeekend(d)) n++; }
+  return sign * n;
+}
+function planStart(r, plan) { return nextWorkday(validD(r.start) ? r.start : (validD(plan.start) ? plan.start : today())); }
+function planDays(r) { return Math.max(1, Math.round(num(r.days)) || 1); }
+function planEnd(r, plan) { return addWorkdays(planStart(r, plan), planDays(r) - 1); }
+function planStats(plan) {
+  const tasks = plan.rows.filter(r => r.type !== 'group');
+  if (!tasks.length) return null;
+  let min = null, max = null, prog = 0;
+  tasks.forEach(r => {
+    const a = planStart(r, plan), b = planEnd(r, plan);
+    if (!min || a < min) min = a;
+    if (!max || b > max) max = b;
+    prog += Math.min(100, Math.max(0, num(r.progress)));
+  });
+  return { min, max, total: dayNum(max) - dayNum(min) + 1, workdays: workdayDiff(min, max) + 1, avg: prog / tasks.length, count: tasks.length };
+}
+// One work stream: tasks follow each other in section order, small tasks share a day
+function buildPlan(state, start) {
+  const cfg = state.cfg, hpd = num(cfg.hpd) || 8, rows = [];
+  const groups = cfg.sections.map(s => ({ name: s.name, tasks: [] })), other = { name: 'Other', tasks: [] };
+  state.tasks.forEach(t => {
+    const c = calcTask(t, cfg);
+    if (!c.final) return;
+    const sec = sectionOf(t, cfg);
+    (groups.find(g => g.name === sec) || other).tasks.push({ t, mh: c.final });
+  });
+  const first = nextWorkday(validD(start) ? start : today());
+  let hours = 0;
+  groups.concat(other).forEach(g => {
+    if (!g.tasks.length) return;
+    rows.push({ id: newId(), type: 'group', name: g.name });
+    g.tasks.forEach(x => {
+      const a = Math.floor(hours / hpd + 1e-9);
+      hours += x.mh;
+      const b = Math.max(a, Math.ceil(hours / hpd - 1e-9) - 1);
+      rows.push({ id: newId(), type: 'task', name: (x.t.desc || '').trim() || String(x.t.act).split(SEP)[1] || 'Task', pic: x.t.owner || '',
+        start: addWorkdays(first, a), days: b - a + 1, status: 'Not Start', progress: 0 });
+    });
+  });
+  return rows;
+}
+
+// ---------- Excel export (.xlsx with live formulas, same layout as the original template) ----------
+function xmlEsc(s) {
+  return String(s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+const V = (v, s) => ({ v, s });               // plain value
+const Fm = (f, v, s) => ({ f, v, s });        // formula + cached value
+function makeSheet() {
+  const rows = {};
+  return { rows, set(col, r, cell) { (rows[r] || (rows[r] = {}))[col] = cell; } };
+}
+function cellXml(ref, cell) {
+  const s = cell.s ? ` s="${cell.s}"` : '';
+  if (cell.f != null) {
+    const str = typeof cell.v === 'string';
+    return `<c r="${ref}"${s}${str ? ' t="str"' : ''}><f>${xmlEsc(cell.f)}</f><v>${xmlEsc(cell.v)}</v></c>`;
+  }
+  if (typeof cell.v === 'number') return `<c r="${ref}"${s}><v>${cell.v}</v></c>`;
+  return `<c r="${ref}"${s} t="inlineStr"><is><t xml:space="preserve">${xmlEsc(cell.v)}</t></is></c>`;
+}
+function sheetXml(sh, o) {
+  o = o || {};
+  let x = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">';
+  x += '<sheetViews><sheetView workbookViewId="0">' + (o.freeze ? '<pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/>' : '') + '</sheetView></sheetViews>';
+  if (o.widths) x += '<cols>' + o.widths.map((w, i) => `<col min="${i + 1}" max="${i + 1}" width="${w}" customWidth="1"/>`).join('') + '</cols>';
+  x += '<sheetData>';
+  Object.keys(sh.rows).map(Number).sort((a, b) => a - b).forEach(r => {
+    const row = sh.rows[r];
+    const cols = Object.keys(row).filter(c => row[c].f != null || (row[c].v !== '' && row[c].v != null))
+      .sort((a, b) => a.length - b.length || (a < b ? -1 : 1));
+    x += `<row r="${r}">` + cols.map(c => cellXml(c + r, row[c])).join('') + '</row>';
+  });
+  x += '</sheetData>';
+  const dv = (o.validations || []).filter(Boolean);
+  if (dv.length) x += `<dataValidations count="${dv.length}">` + dv.map(d =>
+    `<dataValidation type="list" allowBlank="1" showInputMessage="1" showErrorMessage="1" sqref="${d[0]}"><formula1>${xmlEsc(d[1])}</formula1></dataValidation>`).join('') + '</dataValidations>';
+  return x + '</worksheet>';
+}
+
+let CRC_TABLE;
+function crc32(buf) {
+  if (!CRC_TABLE) {
+    CRC_TABLE = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; CRC_TABLE[n] = c >>> 0; }
+  }
+  let crc = 0xFFFFFFFF;
+  for (let i = 0; i < buf.length; i++) crc = CRC_TABLE[(crc ^ buf[i]) & 0xFF] ^ (crc >>> 8);
+  return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+// Minimal zip writer (stored, no compression) — enough for an .xlsx container
+function zipStore(files) {
+  const enc = new TextEncoder(), parts = [], central = [];
+  let offset = 0;
+  files.forEach(f => {
+    const name = enc.encode(f.name), data = enc.encode(f.text), crc = crc32(data);
+    const head = new DataView(new ArrayBuffer(30));
+    head.setUint32(0, 0x04034b50, true); head.setUint16(4, 20, true); head.setUint16(6, 0x0800, true);
+    head.setUint16(8, 0, true); head.setUint16(10, 0, true); head.setUint16(12, 0x21, true);
+    head.setUint32(14, crc, true); head.setUint32(18, data.length, true); head.setUint32(22, data.length, true);
+    head.setUint16(26, name.length, true); head.setUint16(28, 0, true);
+    const cen = new DataView(new ArrayBuffer(46));
+    cen.setUint32(0, 0x02014b50, true); cen.setUint16(4, 20, true); cen.setUint16(6, 20, true); cen.setUint16(8, 0x0800, true);
+    cen.setUint16(10, 0, true); cen.setUint16(12, 0, true); cen.setUint16(14, 0x21, true);
+    cen.setUint32(16, crc, true); cen.setUint32(20, data.length, true); cen.setUint32(24, data.length, true);
+    cen.setUint16(28, name.length, true); cen.setUint32(42, offset, true);
+    parts.push(new Uint8Array(head.buffer), name, data);
+    central.push(new Uint8Array(cen.buffer), name);
+    offset += 30 + name.length + data.length;
+  });
+  const cenSize = central.reduce((a, p) => a + p.length, 0);
+  const end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true);
+  end.setUint32(12, cenSize, true); end.setUint32(16, offset, true);
+  const all = parts.concat(central, [new Uint8Array(end.buffer)]);
+  const out = new Uint8Array(all.reduce((a, p) => a + p.length, 0));
+  let pos = 0;
+  all.forEach(p => { out.set(p, pos); pos += p.length; });
+  return out;
+}
+
+function buildXlsx(state) {
+  const cfg = state.cfg, HEAD = 1, BOLD = 2, PCT = 3, SEC = 4, SPARE = 20;
+  const TB = "'Task Breakdown'!";
+  const acts = [];
+  cfg.sections.forEach((s, i) => s.items.forEach((it, j) => acts.push({ sec: s.name, item: it, no: (i + 1) + '.' + (j + 1) })));
+  const dupeNames = acts.some((a, i) => acts.findIndex(b => b.item === a.item) !== i);
+  const head = (sh, labels) => labels.forEach(l => sh.set(l[0], 1, V(l[1], HEAD)));
+
+  // List (master data, same columns as the template + activity list in O:P)
+  const list = makeSheet();
+  head(list, [['A', 'Situation'], ['B', 'P value should be (M * value)'], ['D', 'Risk Level'], ['E', 'Add'], ['G', 'Role'], ['H', 'Multiplier'],
+    ['L', 'Task Owner'], ['M', 'Department'], ['O', 'Breakdown Activity'], ['P', 'Quote Item']]);
+  cfg.situations.forEach((p, i) => { list.set('A', i + 2, V(p[0])); list.set('B', i + 2, V(num(p[1]))); });
+  cfg.risks.forEach((p, i) => { list.set('D', i + 2, V(p[0])); list.set('E', i + 2, V(num(p[1]) / 100, PCT)); });
+  cfg.roles.forEach((p, i) => { list.set('G', i + 2, V(p[0])); list.set('H', i + 2, V(num(p[1]))); });
+  cfg.owners.forEach((p, i) => { list.set('L', i + 2, V(p[0])); list.set('M', i + 2, V(p[1])); });
+  acts.forEach((a, i) => { list.set('O', i + 2, V(a.item)); list.set('P', i + 2, V(a.no)); });
+
+  // Task Breakdown
+  const tb = makeSheet(), last = state.tasks.length + SPARE + 1;
+  head(tb, [['A', 'No.'], ['B', 'CR / Scope'], ['C', 'Description'], ['D', 'Breakdown Activity'], ['E', 'Quote Item'], ['F', 'Task Owner'], ['G', 'Dept'],
+    ['H', 'Role'], ['I', 'Situation'], ['J', 'O'], ['K', 'M'], ['L', 'P'], ['M', 'Estimate MH (raw)'], ['N', 'Suggest P by R'], ['O', 'Suggest P by S'],
+    ['P', 'SD (RAW MH)'], ['Q', 'Suggest Risk'], ['R', 'Risk'], ['S', 'Estimate MH (final)'], ['T', 'Non Chargeable (Y)']]);
+  const itemMh = {}, ownerMh = {}, deptMh = {};
+  for (let r = 2; r <= last; r++) {
+    const t = state.tasks[r - 2] || newTask(), real = r - 2 < state.tasks.length;
+    const c = calcTask(t, cfg), parts = String(t.act || '').split(SEP);
+    const act = acts.find(a => a.sec === parts[0] && a.item === parts[1]);
+    const qno = act ? act.no : '';
+    if (real) {
+      tb.set('A', r, V(r - 1)); tb.set('C', r, V(t.desc)); tb.set('D', r, V(parts[1] || ''));
+      tb.set('F', r, V(t.owner)); tb.set('H', r, V(t.role)); tb.set('I', r, V(t.sit));
+      ['o', 'm', 'p'].forEach((k, i) => { if (t[k] !== '' && t[k] != null) tb.set('JKL'[i], r, V(num(t[k]))); });
+      if (t.nc) tb.set('T', r, V('Y'));
+      if (qno && !t.nc) itemMh[qno] = (itemMh[qno] || 0) + c.final;
+      if (t.owner) ownerMh[t.owner] = (ownerMh[t.owner] || 0) + c.final;
+      if (c.dept) deptMh[c.dept] = (deptMh[c.dept] || 0) + c.final;
+    }
+    // Duplicate activity names can't be resolved by a lookup, so the number is written as a value
+    if (dupeNames) tb.set('E', r, V(qno));
+    else tb.set('E', r, Fm(`IFERROR(VLOOKUP(D${r},List!$O:$P,2,FALSE),"")`, qno));
+    tb.set('G', r, Fm(`IFERROR(VLOOKUP(F${r},List!$L:$M,2,FALSE),"-")`, c.dept || '-'));
+    tb.set('M', r, Fm(`CEILING((J${r}+4*K${r}+L${r})/6,0.25)`, c.raw));
+    tb.set('N', r, Fm(`IFERROR(CEILING(VLOOKUP(H${r},List!$G:$H,2,FALSE)*K${r},0.5),0)`, c.sugRole || 0));
+    tb.set('O', r, Fm(`IFERROR(VLOOKUP(I${r},List!$A:$B,2,FALSE)*K${r},0)`, c.sugSit || 0));
+    tb.set('P', r, Fm(`(L${r}-J${r})/6`, c.sd));
+    tb.set('Q', r, Fm(`IF(J${r}+K${r}+L${r}=0,"",IF(P${r}>=50%*M${r},"H","L / M"))`, c.sugRisk));
+    tb.set('R', r, V(num(t.risk), PCT));
+    tb.set('S', r, Fm(`CEILING((1+R${r})*(J${r}+4*K${r}+L${r})/6,0.5)`, c.final, BOLD));
+  }
+  const tbValid = [
+    acts.length && [`D2:D${last}`, `List!$O$2:$O$${acts.length + 1}`],
+    cfg.owners.length && [`F2:F${last}`, `List!$L$2:$L$${cfg.owners.length + 1}`],
+    cfg.roles.length && [`H2:H${last}`, `List!$G$2:$G$${cfg.roles.length + 1}`],
+    cfg.situations.length && [`I2:I${last}`, `List!$A$2:$A$${cfg.situations.length + 1}`],
+    cfg.risks.length && [`R2:R${last}`, `List!$E$2:$E$${cfg.risks.length + 1}`],
+    [`T2:T${last}`, '"Y"']
+  ];
+
+  // Estimate Man-day (Auto Fill)
+  const est = makeSheet(), n = cfg.sections.length + acts.length;
+  const totalRow = n + 3, hpdRow = n + 4, mdRow = n + 5, secRows = [];
+  head(est, [['A', 'No.'], ['B', 'Task'], ['C', 'Estimate MH'], ['D', 'Estimate MD'], ['E', 'Man-day (Quote)']]);
+  let r = 2, totalMh = 0, totalMd = 0;
+  cfg.sections.forEach((s, i) => {
+    const secRow = r++, mh = s.items.reduce((a, it, j) => a + (itemMh[(i + 1) + '.' + (j + 1)] || 0), 0);
+    const opt = secOption(state, s.name, i), auto = ceilTo(mh / cfg.hpd, cfg.mdStep);
+    const override = opt.override !== '' && opt.override != null && isFinite(parseFloat(opt.override));
+    secRows.push(secRow); totalMh += mh; totalMd += override ? parseFloat(opt.override) : auto;
+    est.set('A', secRow, V(i + 1, SEC)); est.set('B', secRow, V(s.name, SEC));
+    est.set('C', secRow, s.items.length ? Fm(`SUM(C${secRow + 1}:C${secRow + s.items.length})`, mh, SEC) : V(0, SEC));
+    est.set('D', secRow, Fm(`C${secRow}/$C$${hpdRow}`, mh / cfg.hpd, SEC));
+    est.set('E', secRow, override ? V(parseFloat(opt.override), SEC) : Fm(`CEILING(D${secRow},${cfg.mdStep})`, auto, SEC));
+    s.items.forEach((it, j) => {
+      const no = (i + 1) + '.' + (j + 1), v = itemMh[no] || 0;
+      est.set('A', r, V(no)); est.set('B', r, V(it));
+      est.set('C', r, Fm(`SUMPRODUCT((${TB}$E$2:$E$${last}=A${r})*(${TB}$T$2:$T$${last}<>"Y")*${TB}$S$2:$S$${last})`, v));
+      est.set('D', r, Fm(`C${r}/$C$${hpdRow}`, v / cfg.hpd));
+      r++;
+    });
+  });
+  const sumOf = col => secRows.length ? secRows.map(x => col + x).join('+') : '0';
+  est.set('B', totalRow, V('Total Man-Hours (chargeable)', BOLD)); est.set('C', totalRow, Fm(sumOf('C'), totalMh, BOLD));
+  est.set('B', hpdRow, V('Hours = 1 Man-day')); est.set('C', hpdRow, V(num(cfg.hpd)));
+  est.set('B', mdRow, V('Total Man-days', BOLD)); est.set('E', mdRow, Fm(sumOf('E'), Math.round(totalMd * 1e6) / 1e6, BOLD));
+
+  // Task Owner & Dept MH
+  const own = makeSheet(), depts = [];
+  cfg.owners.forEach(o => { if (o[1] && !depts.includes(o[1])) depts.push(o[1]); });
+  head(own, [['A', 'Task Owner'], ['B', 'Total MH'], ['D', 'Dept'], ['E', 'Total MH']]);
+  cfg.owners.forEach((o, i) => { own.set('A', i + 2, V(o[0])); own.set('B', i + 2, Fm(`SUMIF(${TB}$F:$F,A${i + 2},${TB}$S:$S)`, ownerMh[o[0]] || 0)); });
+  depts.forEach((d, i) => { own.set('D', i + 2, V(d)); own.set('E', i + 2, Fm(`SUMIF(${TB}$G:$G,D${i + 2},${TB}$S:$S)`, deptMh[d] || 0)); });
+
+  // Cover
+  const cover = makeSheet();
+  [['Customer Name', state.meta.customer], ['JOB ID', state.meta.jobId], ['Project Name', state.meta.project], ['Date', state.meta.date], ['Remark', remarkText(state.meta)]]
+    .forEach((p, i) => { cover.set('A', i + 1, V(p[0], BOLD)); cover.set('B', i + 1, V(p[1] || '')); });
+
+  const sheets = [
+    ['Cover', sheetXml(cover, { widths: [18, 50] })],
+    ['Estimate Man-day (Auto Fill)', sheetXml(est, { widths: [8, 44, 14, 14, 18], freeze: true })],
+    ['Task Breakdown', sheetXml(tb, { widths: [6, 14, 48, 36, 11, 16, 8, 30, 24, 7, 7, 7, 12, 12, 12, 10, 10, 8, 12, 12], freeze: true, validations: tbValid })],
+    ['List', sheetXml(list, { widths: [26, 14, 3, 12, 8, 3, 34, 10, 3, 3, 3, 18, 12, 3, 40, 11] })],
+    ['Task Owner & Dept MH', sheetXml(own, { widths: [20, 12, 3, 12, 12] })]
+  ];
+  const planRows = (state.plan && state.plan.rows) || [];
+  if (planRows.length) {
+    const ps = makeSheet();
+    let no = 0;
+    head(ps, [['A', 'No'], ['B', 'Task'], ['C', 'Status'], ['D', 'Progress %'], ['E', 'PIC'], ['F', 'Start'], ['G', 'End'], ['H', 'Days']]);
+    planRows.forEach((p, i) => {
+      const row = i + 2;
+      if (p.type === 'group') { 'ACDEFGH'.split('').forEach(c => ps.set(c, row, V(' ', SEC))); ps.set('B', row, V(p.name || ' ', SEC)); return; }
+      ps.set('A', row, V(++no)); ps.set('B', row, V(p.name)); ps.set('C', row, V(p.status));
+      ps.set('D', row, V(Math.min(100, Math.max(0, num(p.progress))) / 100, PCT)); ps.set('E', row, V(p.pic));
+      ps.set('F', row, V(planStart(p, state.plan))); ps.set('G', row, V(planEnd(p, state.plan))); ps.set('H', row, V(planDays(p)));
+    });
+    sheets.push(['Project Plan', sheetXml(ps, { widths: [6, 52, 14, 12, 16, 12, 12, 8], freeze: true })]);
+  }
+  const xmlHead = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+  const pkg = 'http://schemas.openxmlformats.org/package/2006/', doc = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships', main = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
+  const files = [
+    { name: '[Content_Types].xml', text: xmlHead + `<Types xmlns="${pkg}content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>` +
+      sheets.map((s, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('') + '</Types>' },
+    { name: '_rels/.rels', text: xmlHead + `<Relationships xmlns="${pkg}relationships"><Relationship Id="rId1" Type="${doc}/officeDocument" Target="xl/workbook.xml"/></Relationships>` },
+    { name: 'xl/workbook.xml', text: xmlHead + `<workbook xmlns="${main}" xmlns:r="${doc}"><bookViews><workbookView/></bookViews><sheets>` +
+      sheets.map((s, i) => `<sheet name="${xmlEsc(s[0])}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join('') + '</sheets><calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>' },
+    { name: 'xl/_rels/workbook.xml.rels', text: xmlHead + `<Relationships xmlns="${pkg}relationships">` +
+      sheets.map((s, i) => `<Relationship Id="rId${i + 1}" Type="${doc}/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join('') +
+      `<Relationship Id="rId${sheets.length + 1}" Type="${doc}/styles" Target="styles.xml"/></Relationships>` },
+    { name: 'xl/styles.xml', text: xmlHead + `<styleSheet xmlns="${main}"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts>` +
+      '<fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFDCE6F1"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFF2F2F2"/><bgColor indexed="64"/></patternFill></fill></fills>' +
+      '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+      '<cellXfs count="5"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/><xf numFmtId="9" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="0" fontId="1" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1"/></cellXfs>' +
+      '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>' }
+  ].concat(sheets.map((s, i) => ({ name: `xl/worksheets/sheet${i + 1}.xml`, text: s[1] })));
+  return zipStore(files);
+}
+
+if (typeof module !== 'undefined') module.exports = { applyOps, diffState, opKey, normalize, blankState, newTask, calcTask, buildQuote, quoteText, buildXlsx, buildPlan, planStats, planEnd, addWorkdays, workdayDiff, nextWorkday, ceilTo, textToSections, sectionsToText, textToPairs, SEP };
+
+// ---------- UI ----------
+if (typeof document !== 'undefined') (function () {
+  let S;
+  try { S = normalize(JSON.parse(localStorage.getItem(KEY))); } catch (e) { S = blankState(); }
+  // Shared-room state (see "sharing" below). While in a room, edits go to the server instead of this browser's storage.
+  let room = null, version = 0, pending = [], base = null, syncing = false, syncTimer = null, users = [], lastBeat = 0, remoteDirty = false, restoring = false, curTab = 'quote';
+  function save() {
+    if (room) { queueDiff(); return; }
+    try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* storage unavailable */ }
+  }
+
+  const $ = (sel, root) => (root || document).querySelector(sel);
+  const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  // Dialogs: SweetAlert2 when it has loaded, the browser's own dialogs otherwise (e.g. offline)
+  const swalBase = { buttonsStyling: false, reverseButtons: true, width: 380, customClass: { popup: 'sw', confirmButton: 'btn primary', cancelButton: 'btn' } };
+  function toast(msg, icon) {
+    if (window.Swal) { Swal.fire({ toast: true, position: 'top-end', icon: icon || 'success', title: msg, showConfirmButton: false, timer: 1800, customClass: { popup: 'sw' } }); return; }
+    const el = $('#toast'); el.textContent = msg; setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, 2500);
+  }
+  function askConfirm(title, text, okText, icon) {
+    if (!window.Swal) return Promise.resolve(confirm(title + (text ? '\n' + text : '')));
+    return Swal.fire(Object.assign({}, swalBase, { icon: icon || 'warning', title, text, showCancelButton: true, confirmButtonText: okText || 'ตกลง', cancelButtonText: 'ยกเลิก', focusCancel: !icon }))
+      .then(r => r.isConfirmed);
+  }
+  function showError(title, text) {
+    if (window.Swal) Swal.fire(Object.assign({}, swalBase, { icon: 'error', title, text, confirmButtonText: 'ปิด' }));
+    else alert(title + '\n' + text);
+  }
+
+  // ----- tabs -----
+  const renderers = { quote: renderQuote, tasks: renderTasks, plan: renderPlan, owners: renderOwners, settings: renderSettings };
+  function showTab(name) {
+    comboClose();
+    curTab = name;
+    $$('nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === name));
+    $$('.tab').forEach(t => { t.hidden = t.id !== 'tab-' + name; });
+    renderers[name]();
+  }
+  $('nav').addEventListener('click', e => { if (e.target.dataset.tab) showTab(e.target.dataset.tab); });
+
+  // ----- 1. quote -----
+  function renderQuote() {
+    $$('[data-meta]').forEach(i => { i.value = S.meta[i.dataset.meta] || ''; });
+    const q = buildQuote(S);
+    $('#secOpts').innerHTML = '<tr><th>หมวด</th><th class="num">MD</th><th>ปรับเอง</th><th>รายการย่อย</th></tr>' +
+      (q.sections.length ? q.sections.map(s => {
+        const opt = secOption(S, s.name, S.cfg.sections.findIndex(x => x.name === s.name));
+        return `<tr data-sec="${esc(s.name)}"><td>${esc(s.name)}</td><td class="num">${fmt(s.auto)}</td>
+          <td><input type="number" min="0" step="0.25" data-o="override" value="${esc(opt.override)}"></td>
+          <td><input type="checkbox" data-o="show" ${opt.hide ? '' : 'checked'}></td></tr>`;
+      }).join('') : '<tr><td colspan="4" class="hint">ยังไม่มีหมวดที่มีชั่วโมง</td></tr>');
+    renderSheet();
+  }
+  function renderSheet() {
+    const q = buildQuote(S);
+    $('#quoteWarn').innerHTML = q.unassigned.count
+      ? `<div class="warn">มี ${q.unassigned.count} งาน (${fmt(q.unassigned.mh)} ชม.) ที่ยังไม่ได้เลือก Breakdown Activity จึงยังไม่ถูกนับในใบสรุป</div>` : '';
+    const meta = [S.meta.jobId && 'Job ID: ' + S.meta.jobId, S.meta.date && 'Date: ' + S.meta.date].filter(Boolean).join('  ·  ');
+    let html = `<h2 class="q-title">${esc(quoteTitle(S.meta))}</h2><div class="q-meta">${esc(meta)}</div>`;
+    if (!q.sections.length) html += '<p class="q-empty noprint">ยังไม่มีข้อมูล ไปกรอกงานที่แท็บ "2. Task Breakdown" ก่อน</p>';
+    q.sections.forEach(s => {
+      html += `<div class="q-sec"><div class="q-row"><span>${esc(s.name)}</span><span>${fmt(s.md)} ${unit(s.md)}</span></div>` +
+        (s.lines.length ? '<ul>' + s.lines.map(l => `<li>${esc(l)}</li>`).join('') + '</ul>' : '') + '</div>';
+    });
+    if (q.sections.length) html += `<div class="q-total"><span>Total</span><span>${fmt(q.total)} ${unit(q.total)}</span></div>` +
+      `<div class="q-remark"><span>Remark</span><div>${esc(remarkText(S.meta))}</div></div>`;
+    $('#sheet').innerHTML = html;
+  }
+  $('#tab-quote').addEventListener('input', e => {
+    const el = e.target;
+    if (el.dataset.meta) { S.meta[el.dataset.meta] = el.value; }
+    else if (el.dataset.o) {
+      const name = el.closest('tr').dataset.sec;
+      const opt = secOption(S, name, S.cfg.sections.findIndex(x => x.name === name));
+      if (el.dataset.o === 'override') opt.override = el.value; else opt.hide = !el.checked;
+      S.secOpt[name] = opt;
+    } else return;
+    save(); renderSheet();
+  });
+  $('#btnPrint').addEventListener('click', () => window.print());
+  window.addEventListener('beforeprint', renderSheet);
+  $('#btnCopy').addEventListener('click', () => {
+    const text = quoteText(S);
+    const fallback = () => {
+      const ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      const ok = document.execCommand('copy'); ta.remove();
+      toast(ok ? 'คัดลอกแล้ว' : 'คัดลอกไม่สำเร็จ', ok ? 'success' : 'error');
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(() => toast('คัดลอกแล้ว'), fallback);
+    else fallback();
+  });
+
+  // ----- theme -----
+  const THEME_KEY = 'manday-theme';
+  function applyTheme(t) {
+    document.documentElement.dataset.theme = t;
+    $('#btnTheme').textContent = t === 'dark' ? 'Light' : 'Dark';
+  }
+  let theme = null;
+  try { theme = localStorage.getItem(THEME_KEY); } catch (e) { /* storage unavailable */ }
+  if (theme !== 'dark' && theme !== 'light') theme = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  applyTheme(theme);
+  $('#btnTheme').addEventListener('click', () => {
+    theme = theme === 'dark' ? 'light' : 'dark';
+    applyTheme(theme);
+    try { localStorage.setItem(THEME_KEY, theme); } catch (e) { /* storage unavailable */ }
+  });
+
+  // ----- 2. tasks -----
+  const closedRows = new Set();   // ids of tasks whose detail line has been folded away (not persisted); details show by default
+  // Searchable dropdowns. The input shows the label; the real value lives in data-val (or .value for settings fields).
+  const COMBO_EMPTY = { act: 1, owner: 1, role: 1, sit: 1, pic: 1 };   // kinds that may be left blank
+  function comboOptions(kind) {
+    const names = list => list.map(r => ({ v: r[0], t: r[0] }));
+    if (kind === 'act') return [].concat(...S.cfg.sections.map(s => s.items.map(it => ({ v: s.name + SEP + it, t: it, g: s.name }))));
+    if (kind === 'owner' || kind === 'pic') return S.cfg.owners.map(o => ({ v: o[0], t: o[0], d: o[1] }));
+    if (kind === 'status') return PLAN_STATUS.map(x => ({ v: x, t: x }));
+    if (kind === 'role') return names(S.cfg.roles);
+    if (kind === 'sit') return names(S.cfg.situations);
+    if (kind === 'risk') return S.cfg.risks.map(r => ({ v: String(r[1] / 100), t: fmt(r[1]) + '% ' + r[0] }));
+    return ['0.25', '0.5', '1'].map(x => ({ v: x, t: x }));   // mdStep
+  }
+  function sameVal(kind, a, b) {
+    return kind === 'risk' || kind === 'mdStep' ? Math.abs(num(a) - num(b)) < 1e-9 : String(a) === String(b);
+  }
+  function comboLabel(kind, val) {
+    const hit = comboOptions(kind).find(o => sameVal(kind, o.v, val));
+    if (hit) return hit.t;
+    if (val === '' || val == null) return '';
+    if (kind === 'act') return String(val).split(SEP).join(' › ');
+    if (kind === 'risk') return fmt(num(val) * 100) + '%';
+    return String(val);
+  }
+  function comboHtml(kind, val, cls, placeholder) {
+    return `<input class="${cls}combo" data-combo="${kind}" data-val="${esc(val)}" value="${esc(comboLabel(kind, val))}" placeholder="${placeholder || '—'}" autocomplete="off" spellcheck="false">`;
+  }
+
+  const pop = document.createElement('div');
+  pop.id = 'comboPop'; pop.hidden = true; document.body.appendChild(pop);
+  let cb = null;   // the open dropdown, if any
+  function comboOpen(input) {
+    if (input.disabled || cb || restoring) return;
+    cb = { input, kind: input.dataset.combo, label: input.value, hint: input.placeholder, dirty: false, items: [], hi: -1,
+      cur: input.dataset.cfg ? input.value : (input.dataset.val || ''), all: comboOptions(input.dataset.combo) };
+    if (COMBO_EMPTY[cb.kind]) cb.all.unshift({ v: '', t: '— ไม่ระบุ —' });
+    // Clear the box so typing filters straight away; the current choice stays visible as the placeholder
+    input.placeholder = cb.label || 'พิมพ์เพื่อค้นหา'; input.value = '';
+    comboRender('');
+  }
+  function comboRender(q) {
+    q = q.trim().toLowerCase();
+    cb.items = cb.all.filter(o => !q || (o.v !== '' && [o.t, o.g, o.d].some(x => x && x.toLowerCase().includes(q))));
+    cb.hi = q ? (cb.items.length ? 0 : -1) : cb.items.findIndex(o => sameVal(cb.kind, o.v, cb.cur));
+    let html = '', group = null;
+    cb.items.forEach((o, i) => {
+      if (o.g && o.g !== group) { group = o.g; html += `<div class="cg">${esc(group)}</div>`; }
+      html += `<div class="co${i === cb.hi ? ' hi' : ''}${sameVal(cb.kind, o.v, cb.cur) ? ' sel' : ''}" data-i="${i}"><span>${esc(o.t)}</span>${o.d ? `<span class="cd">${esc(o.d)}</span>` : ''}</div>`;
+    });
+    pop.innerHTML = html || '<div class="cnone">ไม่พบรายการ</div>';
+    pop.hidden = false;
+    comboPlace();
+    const el = $('.co.hi', pop); if (el) el.scrollIntoView({ block: 'nearest' });
+  }
+  function comboPlace() {
+    const r = cb.input.getBoundingClientRect(), below = innerHeight - r.bottom - 8, above = r.top - 8;
+    pop.style.minWidth = Math.max(r.width, 200) + 'px';
+    pop.style.maxHeight = '280px';
+    if (below >= Math.min(pop.scrollHeight + 2, 280) || below >= above) {
+      pop.style.top = (r.bottom + 2) + 'px'; pop.style.bottom = 'auto'; pop.style.maxHeight = Math.max(100, Math.min(280, below)) + 'px';
+    } else {
+      pop.style.top = 'auto'; pop.style.bottom = (innerHeight - r.top + 2) + 'px'; pop.style.maxHeight = Math.min(280, above) + 'px';
+    }
+    pop.style.left = Math.max(8, Math.min(r.left, innerWidth - pop.offsetWidth - 8)) + 'px';
+  }
+  function comboMove(step) {
+    if (!cb.items.length) return;
+    cb.hi = cb.hi < 0 ? (step > 0 ? 0 : cb.items.length - 1) : (cb.hi + step + cb.items.length) % cb.items.length;
+    $$('.co', pop).forEach((el, i) => el.classList.toggle('hi', i === cb.hi));
+    $$('.co', pop)[cb.hi].scrollIntoView({ block: 'nearest' });
+  }
+  function comboClose() {
+    if (!cb) return;
+    cb.input.value = cb.label; cb.input.placeholder = cb.hint;
+    cb = null; pop.hidden = true;
+  }
+  function comboChoose(o) {
+    const input = cb.input, kind = cb.kind;
+    cb.label = o.v === '' ? '' : o.t;
+    comboClose();
+    if (input.dataset.cfg) return;            // settings fields are read when "บันทึก" is pressed
+    input.dataset.val = o.v;
+    const prow = input.closest('.prow');
+    if (prow) {                                // Project Plan row
+      const r = S.plan.rows.find(x => x.id === prow.dataset.id);
+      r[kind] = o.v;
+      if (kind === 'status' && o.v === 'Completed') { r.progress = 100; $('[data-p="progress"]', prow).value = 100; }
+      save(); refreshPlan();
+      return;
+    }
+    const row = input.closest('.trow');
+    if (!row) return;
+    const t = S.tasks.find(x => x.id === row.dataset.id);
+    t[kind] = kind === 'risk' ? num(o.v) : o.v;
+    fillCalc(row, t); fillTotals(); save();
+  }
+  const isCombo = el => el && el.matches && el.matches('.combo');
+  document.addEventListener('focusin', e => { if (isCombo(e.target)) comboOpen(e.target); });
+  document.addEventListener('click', e => { if (isCombo(e.target)) comboOpen(e.target); });
+  document.addEventListener('focusout', e => { if (cb && e.target === cb.input) comboClose(); });
+  // Typing or pasting into a closed box (e.g. after Esc) reopens it before the text lands
+  document.addEventListener('beforeinput', e => { if (isCombo(e.target)) comboOpen(e.target); });
+  document.addEventListener('input', e => { if (cb && e.target === cb.input) { cb.dirty = true; comboRender(cb.input.value); } });
+  document.addEventListener('keydown', e => {
+    if (!isCombo(e.target)) return;
+    if (!cb) {
+      if (e.key === 'ArrowDown' || e.key === 'Enter') { comboOpen(e.target); e.preventDefault(); }
+      return;
+    }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { comboMove(e.key === 'ArrowDown' ? 1 : -1); e.preventDefault(); }
+    else if (e.key === 'Enter') { if (cb.hi >= 0) comboChoose(cb.items[cb.hi]); e.preventDefault(); }
+    else if (e.key === 'Escape') comboClose();
+    else if (e.key === 'Tab' && cb.dirty && cb.hi >= 0) comboChoose(cb.items[cb.hi]);
+  });
+  pop.addEventListener('mousedown', e => {
+    e.preventDefault();                       // keep focus in the input
+    const el = e.target.closest('.co');
+    if (el && cb) comboChoose(cb.items[+el.dataset.i]);
+  });
+  window.addEventListener('resize', () => { if (cb) comboPlace(); });
+  window.addEventListener('scroll', e => { if (cb && e.target !== pop) comboPlace(); }, true);
+
+  function rowHtml(t, i) {
+    const n = f => `<input class="cell num" type="number" min="0" step="0.25" data-f="${f}" value="${esc(t[f])}" placeholder="–">`;
+    return `<div class="trow${closedRows.has(t.id) ? '' : ' open'}" data-id="${t.id}">
+      <div class="tgrid tmain">
+        <span class="idx">${i + 1}</span>
+        ${comboHtml('act', t.act, 'cell ', 'เลือก Activity')}
+        <input class="cell" data-f="desc" value="${esc(t.desc)}" placeholder="รายละเอียดงาน">
+        ${comboHtml('owner', t.owner, 'cell ')}
+        ${n('o')}${n('m')}${n('p')}
+        ${comboHtml('risk', t.risk, 'cell ')}
+        <span class="flag" data-c="flag" title="SD ≥ 50% ของ MH: ความไม่แน่นอนสูง ควรพิจารณาเพิ่ม Risk"></span>
+        <span class="final num" data-c="final"></span>
+        <label class="nccell" title="ไม่คิดเงิน: ไม่นับในใบสรุปให้ Sale"><input type="checkbox" data-f="nc" ${t.nc ? 'checked' : ''}></label>
+        <button class="icon" data-toggle title="ซ่อน / แสดงรายละเอียด">▾</button>
+        <button class="icon del" data-del title="ลบงานนี้">×</button>
+      </div>
+      <div class="tmore">
+        <label>Role ${comboHtml('role', t.role, '')}</label>
+        <label>Situation ${comboHtml('sit', t.sit, '')}</label>
+        <span>Dept <b data-c="dept"></b></span>
+        <span>MH raw <b data-c="raw"></b></span>
+        <span>Suggest P by Role <b data-c="sugRole"></b></span>
+        <span>by Situation <b data-c="sugSit"></b></span>
+        <span>SD <b data-c="sd"></b></span>
+        <span>Suggest Risk <b data-c="sugRisk"></b></span>
+      </div>
+    </div>`;
+  }
+  function fillCalc(row, t) {
+    const c = calcTask(t, S.cfg), set = (k, v) => { $(`[data-c="${k}"]`, row).textContent = v; };
+    const dash = v => (v === '' || v == null ? '–' : v);
+    set('dept', dash(c.dept));
+    set('raw', c.has ? fmt(c.raw) : '–');
+    set('sugRole', c.sugRole == null ? '–' : fmt(c.sugRole));
+    set('sugSit', c.sugSit == null ? '–' : fmt(c.sugSit));
+    set('sd', c.has ? fmt(c.sd) : '–');
+    set('sugRisk', dash(c.sugRisk));
+    set('flag', c.sugRisk === 'H' ? 'H' : '');
+    set('final', c.has ? fmt(c.final) : '');
+    row.classList.toggle('nc', !!t.nc);
+  }
+  function fillTotals() {
+    let raw = 0, fin = 0;
+    S.tasks.forEach(t => { const c = calcTask(t, S.cfg); raw += c.raw; fin += c.final; });
+    $('#sumRaw').textContent = 'raw ' + fmt(raw) + ' MH';
+    $('#sumFinal').textContent = fmt(fin) + ' MH · ' + fmt(fin / S.cfg.hpd) + ' MD';
+    $('#btnExpand').textContent = S.tasks.length && S.tasks.every(t => !closedRows.has(t.id)) ? 'ซ่อนรายละเอียดทั้งหมด' : 'แสดงรายละเอียดทั้งหมด';
+  }
+  function renderTasks() {
+    const box = $('#taskList');
+    box.innerHTML = S.tasks.map(rowHtml).join('') || '<div class="tempty">ยังไม่มีงาน กด "+ เพิ่มงาน" เพื่อเริ่ม</div>';
+    $$('.trow', box).forEach((row, i) => fillCalc(row, S.tasks[i]));
+    fillTotals();
+  }
+  $('#taskList').addEventListener('input', e => {
+    const el = e.target, row = el.closest('.trow');
+    if (!el.dataset.f || !row) return;
+    const t = S.tasks.find(x => x.id === row.dataset.id);
+    t[el.dataset.f] = el.type === 'checkbox' ? el.checked : (el.dataset.f === 'risk' ? num(el.value) : el.value);
+    fillCalc(row, t); fillTotals(); save();
+  });
+  $('#taskList').addEventListener('click', e => {
+    const row = e.target.closest('.trow');
+    if (!row) return;
+    const id = row.dataset.id;
+    if (e.target.matches('[data-toggle]')) {
+      if (closedRows.has(id)) closedRows.delete(id); else closedRows.add(id);
+      row.classList.toggle('open', !closedRows.has(id));
+      fillTotals();
+    } else if (e.target.matches('[data-del]')) {
+      const t = S.tasks.find(x => x.id === id);
+      const remove = () => { S.tasks = S.tasks.filter(x => x.id !== id); closedRows.delete(id); save(); renderTasks(); };
+      if (t.desc || calcTask(t, S.cfg).has) askConfirm('ลบงานนี้?', t.desc || '', 'ลบ').then(ok => { if (ok) remove(); });
+      else remove();
+    }
+  });
+  $('#btnExpand').addEventListener('click', () => {
+    const allOpen = S.tasks.length && S.tasks.every(t => !closedRows.has(t.id));
+    closedRows.clear();
+    if (allOpen) S.tasks.forEach(t => closedRows.add(t.id));
+    renderTasks();
+  });
+  $('#btnAdd').addEventListener('click', () => {
+    const last = S.tasks[S.tasks.length - 1], t = newTask();
+    if (last) { t.act = last.act; t.owner = last.owner; t.role = last.role; }
+    S.tasks.push(t); save(); renderTasks();
+    const rows = $$('#taskList .trow'); $('[data-f="desc"]', rows[rows.length - 1]).focus();
+  });
+
+  // ----- project plan -----
+  const STATUS_CLASS = { 'Not Start': 's-idle', 'On Going': 's-run', 'At Risk': 's-risk', 'Delay': 's-late', 'Pending': 's-idle', 'Testing': 's-test', 'Completed': 's-done' };
+  const shortD = s => (validD(s) ? +s.slice(8) + ' ' + MONTHS[+s.slice(5, 7) - 1] : '–');
+  function planRowHtml(r, n) {
+    const track = '<div class="ptrack"><div class="pbar"><i></i></div></div>';
+    const del = '<button class="icon del" data-pdel title="ลบรายการนี้">×</button>';
+    if (r.type === 'group') return `<div class="prow pgrid grp" data-id="${r.id}">
+      <span class="idx"></span><input class="cell" data-p="name" value="${esc(r.name)}" placeholder="หัวข้อ">
+      <span></span><span></span><span></span><span></span><span></span><span class="pend" data-c="end"></span>${track}${del}</div>`;
+    return `<div class="prow pgrid" data-id="${r.id}">
+      <span class="idx">${n}</span>
+      <input class="cell" data-p="name" value="${esc(r.name)}" placeholder="ชื่องาน">
+      ${comboHtml('pic', r.pic, 'cell ')}
+      ${comboHtml('status', r.status, 'cell ')}
+      <input class="cell num" type="number" min="0" max="100" step="5" data-p="progress" value="${esc(r.progress)}">
+      <input class="cell" type="date" data-p="start" value="${esc(planStart(r, S.plan))}">
+      <input class="cell num" type="number" min="1" step="1" data-p="days" value="${esc(r.days)}">
+      <span class="pend" data-c="end"></span>${track}${del}</div>`;
+  }
+  function renderPlan() {
+    $('#planStart').value = validD(S.plan.start) ? S.plan.start : today();
+    let n = 0;
+    $('#planList').innerHTML = S.plan.rows.map(r => planRowHtml(r, r.type === 'group' ? '' : ++n)).join('') ||
+      '<div class="tempty">ยังไม่มีแผน กด "สร้างจากงานที่กรอกอยู่" หรือ "สร้างจากไฟล์ JSON"</div>';
+    refreshPlan();
+  }
+  // Recomputes end dates, bars, month header and summary without rebuilding the inputs
+  function refreshPlan() {
+    const st = planStats(S.plan), rows = S.plan.rows, card = $('#planCard');
+    $('#planSummary').textContent = st ? `${shortD(st.min)} → ${shortD(st.max)} · ${st.workdays} วันทำการ · ${st.count} งาน · Progress ${fmt(st.avg)}%` : '';
+    let head = '';
+    if (st) {
+      const d = parseD(st.min), base = dayNum(st.min);
+      while (fmtD(d) <= st.max) {
+        const from = dayNum(fmtD(d)), label = MONTHS[d.getUTCMonth()];
+        d.setUTCMonth(d.getUTCMonth() + 1, 1);
+        const to = Math.min(dayNum(fmtD(d)) - 1, dayNum(st.max)), w = (to - from + 1) / st.total * 100;
+        head += `<span style="left:${((from - base) / st.total * 100).toFixed(3)}%;width:${w.toFixed(3)}%">${w > 7 ? label : ''}</span>`;
+      }
+    }
+    $('#planMonths').innerHTML = head;
+    const t = today(), hasToday = !!st && t >= st.min && t <= st.max;
+    card.classList.toggle('has-today', hasToday);
+    if (hasToday) card.style.setProperty('--today', ((dayNum(t) - dayNum(st.min) + .5) / st.total * 100).toFixed(3) + '%');
+    $$('#planList .prow').forEach((el, i) => {
+      const r = rows[i], bar = $('.pbar', el);
+      let a, b, prog, cls;
+      if (r.type === 'group') {
+        const kids = [];
+        for (let j = i + 1; j < rows.length && rows[j].type !== 'group'; j++) kids.push(rows[j]);
+        bar.hidden = !kids.length;
+        if (!kids.length) { $('[data-c="end"]', el).textContent = ''; return; }
+        a = kids.map(k => planStart(k, S.plan)).sort()[0];
+        b = kids.map(k => planEnd(k, S.plan)).sort().pop();
+        prog = kids.reduce((s, k) => s + Math.min(100, Math.max(0, num(k.progress))), 0) / kids.length;
+        cls = 's-grp';
+      } else {
+        a = planStart(r, S.plan); b = planEnd(r, S.plan);
+        prog = Math.min(100, Math.max(0, num(r.progress)));
+        cls = STATUS_CLASS[r.status] || 's-idle';
+      }
+      $('[data-c="end"]', el).textContent = shortD(b);
+      bar.className = 'pbar ' + cls;
+      bar.style.left = ((dayNum(a) - dayNum(st.min)) / st.total * 100).toFixed(3) + '%';
+      bar.style.width = ((dayNum(b) - dayNum(a) + 1) / st.total * 100).toFixed(3) + '%';
+      bar.firstChild.style.width = prog + '%';
+      bar.title = shortD(a) + ' → ' + shortD(b) + ' · ' + fmt(prog) + '%';
+    });
+  }
+  function setPlan(rows, source) {
+    const apply = () => { S.plan.rows = rows; save(); renderPlan(); toast('สร้าง Project Plan จาก' + source + 'แล้ว'); };
+    if (!rows.length) { showError('สร้างแผนไม่ได้', source + 'ยังไม่มีงานที่กรอกชั่วโมง (O / M / P)'); return; }
+    if (S.plan.rows.length) askConfirm('แทนที่แผนเดิม?', 'แผนที่มีอยู่ ' + S.plan.rows.length + ' รายการ รวมถึง Status และ Progress ที่กรอกไว้ จะถูกแทนที่', 'แทนที่').then(ok => { if (ok) apply(); });
+    else apply();
+  }
+  $('#btnPlanGen').addEventListener('click', () => setPlan(buildPlan(S, S.plan.start), 'งานที่กรอกอยู่'));
+  $('#btnPlanImport').addEventListener('click', () => $('#filePlan').click());
+  $('#filePlan').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try { setPlan(buildPlan(normalize(JSON.parse(reader.result)), S.plan.start), 'ไฟล์ ' + file.name + ' '); }
+      catch (err) { showError('ไฟล์นี้อ่านไม่ได้', err.message); }
+      e.target.value = '';
+    };
+    reader.readAsText(file);
+  });
+  // Moving the project start shifts every row by the same number of working days
+  $('#planStart').addEventListener('change', e => {
+    if (!validD(e.target.value)) return;
+    const from = validD(S.plan.start) ? S.plan.start : today(), delta = workdayDiff(from, e.target.value);
+    S.plan.rows.forEach(r => { if (r.type !== 'group') r.start = addWorkdays(planStart(r, S.plan), delta); });
+    S.plan.start = e.target.value;
+    save(); renderPlan();
+  });
+  $('#planList').addEventListener('input', e => {
+    const el = e.target, row = el.closest('.prow');
+    if (!el.dataset.p || !row) return;
+    const r = S.plan.rows.find(x => x.id === row.dataset.id);
+    if (el.dataset.p === 'start' && !validD(el.value)) return;   // half-typed date
+    r[el.dataset.p] = el.value;
+    save(); refreshPlan();
+  });
+  $('#planList').addEventListener('click', e => {
+    if (!e.target.matches('[data-pdel]')) return;
+    const id = e.target.closest('.prow').dataset.id, r = S.plan.rows.find(x => x.id === id);
+    const remove = () => { S.plan.rows = S.plan.rows.filter(x => x.id !== id); save(); renderPlan(); };
+    if (r.name) askConfirm('ลบรายการนี้?', r.name, 'ลบ').then(ok => { if (ok) remove(); });
+    else remove();
+  });
+  $('#btnPlanAdd').addEventListener('click', () => {
+    const st = planStats(S.plan);
+    S.plan.rows.push({ id: newId(), type: 'task', name: '', pic: '', start: st ? addWorkdays(st.max, 1) : planStart({}, S.plan), days: 1, status: 'Not Start', progress: 0 });
+    save(); renderPlan();
+    const rows = $$('#planList .prow'); $('[data-p="name"]', rows[rows.length - 1]).focus();
+  });
+  $('#btnPlanGroup').addEventListener('click', () => {
+    S.plan.rows.push({ id: newId(), type: 'group', name: '' });
+    save(); renderPlan();
+    const rows = $$('#planList .prow'); $('[data-p="name"]', rows[rows.length - 1]).focus();
+  });
+
+  // ----- 3. owners -----
+  function renderOwners() {
+    const byOwner = {}, byDept = {};
+    let total = 0;
+    S.tasks.forEach(t => {
+      const c = calcTask(t, S.cfg);
+      if (!c.final) return;
+      total += c.final;
+      const o = t.owner || '(ยังไม่ระบุ)', d = c.dept || '(ยังไม่ระบุ)';
+      byOwner[o] = (byOwner[o] || 0) + c.final;
+      byDept[d] = (byDept[d] || 0) + c.final;
+    });
+    const table = (title, map) => `<tr><th>${title}</th><th class="num">Total MH</th><th class="num">MD</th></tr>` +
+      (Object.keys(map).sort((a, b) => map[b] - map[a]).map(k =>
+        `<tr><td>${esc(k)}</td><td class="num">${fmt(map[k])}</td><td class="num">${fmt(map[k] / S.cfg.hpd)}</td></tr>`).join('') ||
+        '<tr><td colspan="3" class="hint">ยังไม่มีข้อมูล</td></tr>') +
+      `<tr><td class="strong">รวม</td><td class="num strong">${fmt(total)}</td><td class="num strong">${fmt(total / S.cfg.hpd)}</td></tr>`;
+    $('#ownerTable').innerHTML = table('Task Owner', byOwner);
+    $('#deptTable').innerHTML = table('Dept', byDept);
+  }
+
+  // ----- 4. settings -----
+  // Read-only until Edit is pressed; nothing is applied until Save
+  function setCfgEditing(on) {
+    $$('#tab-settings [data-cfg], #tab-settings [data-list]').forEach(el => { el.disabled = !on; });
+    $('#btnCfgEdit').hidden = on;
+    $('#btnCfgSave').hidden = !on;
+    $('#btnCfgCancel').hidden = !on;
+    $('#cfgState').textContent = on ? 'กำลังแก้ไข — กด "บันทึก" เพื่อใช้ค่าใหม่' : 'อ่านอย่างเดียว';
+  }
+  function renderSettings() {
+    $$('[data-cfg]').forEach(i => { i.value = S.cfg[i.dataset.cfg]; });
+    $('[data-list="sections"]').value = sectionsToText(S.cfg.sections);
+    ['owners', 'roles', 'situations', 'risks'].forEach(k => { $(`[data-list="${k}"]`).value = pairsToText(S.cfg[k]); });
+    setCfgEditing(false);
+  }
+  $('#btnCfgEdit').addEventListener('click', () => setCfgEditing(true));
+  $('#btnCfgCancel').addEventListener('click', renderSettings);
+  $('#btnCfgSave').addEventListener('click', () => {
+    $$('[data-cfg]').forEach(el => { S.cfg[el.dataset.cfg] = num(el.value) || DEFAULT_CFG[el.dataset.cfg]; });
+    S.cfg.sections = textToSections($('[data-list="sections"]').value);
+    ['owners', 'roles', 'situations', 'risks'].forEach(k => { S.cfg[k] = textToPairs($(`[data-list="${k}"]`).value, k !== 'owners'); });
+    save(); renderSettings(); toast('บันทึกการตั้งค่าแล้ว');
+  });
+
+  // ----- file actions -----
+  $('#btnNew').addEventListener('click', () => {
+    askConfirm('เริ่มโปรเจกต์ใหม่?', (room ? 'คุณอยู่ในห้องแชร์: งานจะถูกล้างสำหรับทุกคนในห้อง ' : '') + 'งานทั้งหมดจะถูกล้าง (การตั้งค่ายังอยู่) ถ้ายังต้องใช้ให้ Export เก็บไว้ก่อน', 'ล้างและเริ่มใหม่').then(ok => {
+      if (!ok) return;
+      const cfg = S.cfg; S = blankState(); S.cfg = cfg;
+      save(); showTab('quote');
+    });
+  });
+  function fileName(ext) { return (quoteTitle(S.meta).replace(/[\\/:*?"<>|]+/g, ' ').trim() || 'manday') + ext; }
+  function download(data, type, ext) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([data], { type }));
+    a.download = fileName(ext);
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+  // Both exports ask first, showing the file name that will be saved
+  function confirmExport(label, ext, run) {
+    const n = S.tasks.filter(t => calcTask(t, S.cfg).has).length;
+    askConfirm('Export ' + label + '?', 'ไฟล์: ' + fileName(ext) + ' (' + n + ' งาน)', 'Export', 'question').then(ok => {
+      if (!ok) return;
+      run(); toast('Export ' + label + ' แล้ว');
+    });
+  }
+  $('#btnExport').addEventListener('click', () => confirmExport('JSON', '.json', () => download(JSON.stringify(S, null, 2), 'application/json', '.json')));
+  $('#btnExcel').addEventListener('click', () => confirmExport('Excel', '.xlsx', () => download(buildXlsx(S), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', '.xlsx')));
+  $('#btnImport').addEventListener('click', () => {
+    if (!room) { $('#fileImport').click(); return; }
+    askConfirm('Import ทับข้อมูลในห้อง?', 'ทุกคนในห้องจะเห็นข้อมูลถูกแทนที่ด้วยไฟล์ที่เลือก', 'เลือกไฟล์').then(ok => { if (ok) $('#fileImport').click(); });
+  });
+  $('#fileImport').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try { S = normalize(JSON.parse(reader.result)); save(); showTab('quote'); toast('Import เรียบร้อย'); }
+      catch (err) { showError('ไฟล์นี้อ่านไม่ได้', err.message); }
+      e.target.value = '';
+    };
+    reader.readAsText(file);
+  });
+
+  // ----- sharing: a room on the server that several people edit together -----
+  const API = '/api/room', NAME_KEY = 'manday-name';
+  const COLORS = ['#2563eb', '#db2777', '#059669', '#d97706', '#7c3aed', '#dc2626', '#0891b2', '#65a30d'];
+  const me = { id: '', name: '', color: '', focus: '' };
+  try { me.id = sessionStorage.getItem('manday-client') || ''; } catch (e) { /* storage unavailable */ }
+  if (!/^[a-z0-9]{6,24}$/.test(me.id)) { me.id = newId(); try { sessionStorage.setItem('manday-client', me.id); } catch (e) { /* storage unavailable */ } }
+  me.color = COLORS[me.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % COLORS.length];
+
+  async function api(body) {
+    const r = await fetch(API, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    let j = null;
+    try { j = await r.json(); } catch (e) { /* not JSON */ }
+    if (!r.ok || !j) { const err = new Error((j && j.error) || 'HTTP ' + r.status); err.status = r.status; throw err; }
+    return j;
+  }
+  // Called by save() while in a room: queue whatever changed since the last call
+  function queueDiff() {
+    diffState(base, S).forEach(op => {
+      const key = opKey(op), i = key ? pending.findIndex(p => opKey(p) === key) : -1;
+      if (i >= 0) pending[i] = op; else pending.push(op);
+    });
+    base = clone(S);
+    clearTimeout(syncTimer); syncTimer = setTimeout(tick, 400);
+  }
+  function schedule() { clearTimeout(syncTimer); if (room) syncTimer = setTimeout(tick, document.hidden ? 15000 : 2500); }
+  async function tick() {
+    if (!room || syncing) return;
+    syncing = true;
+    const sending = pending, hb = Date.now() - lastBeat > 8000;
+    pending = [];
+    try {
+      const res = await api({ room, since: version, ops: sending, client: me, hb });
+      if (hb) lastBeat = Date.now();
+      if (res.doc) {
+        const next = applyOps(normalize(res.doc), pending);   // keep edits made while the request was in flight
+        if (JSON.stringify(next) !== JSON.stringify(S)) remoteDirty = true;
+        S = next; base = clone(S);
+      }
+      version = res.version;
+      users = res.users || [];
+      setSync(true);
+    } catch (err) {
+      pending = sending.concat(pending);
+      setSync(false);
+      if (err.status === 404) { leaveRoom(); showError('ห้องนี้ไม่มีแล้ว', 'กลับมาใช้ข้อมูลในเครื่องแทน'); syncing = false; return; }
+    }
+    syncing = false;
+    if (remoteDirty) remoteRender();
+    renderPresence();
+    schedule();
+  }
+  // Redraw after someone else's edit without disturbing what this user is doing
+  function remoteRender() {
+    if (cb || (window.Swal && Swal.isVisible()) || !$('#btnCfgSave').hidden) return;   // retry on the next tick
+    remoteDirty = false;
+    const a = document.activeElement;
+    let sel = null, from = null, to = null;
+    if (a && a.matches && a.matches('input, textarea')) {
+      const attr = ['data-f', 'data-p', 'data-combo', 'data-meta', 'data-o'].find(x => a.hasAttribute(x));
+      const quote = v => String(v).replace(/["\\]/g, '\\$&');
+      const row = a.closest('[data-id]'), sec = a.closest('[data-sec]');
+      if (attr) sel = (row ? `[data-id="${quote(row.dataset.id)}"] ` : sec ? `[data-sec="${quote(sec.dataset.sec)}"] ` : '') + `[${attr}="${quote(a.getAttribute(attr))}"]`;
+      try { from = a.selectionStart; to = a.selectionEnd; } catch (e) { /* number and date inputs have no caret API */ }
+    }
+    renderers[curTab]();
+    const el = sel && $('#tab-' + curTab + ' ' + sel);
+    if (el && el !== document.activeElement) {
+      restoring = true; el.focus(); restoring = false;
+      try { if (from != null) el.setSelectionRange(from, to); } catch (e) { /* see above */ }
+    }
+  }
+  const initials = name => String(name || '?').trim().split(/\s+/).slice(0, 2).map(w => w.charAt(0)).join('').toUpperCase() || '?';
+  function renderPresence() {
+    const inRoom = !!room;
+    $('#collabUsers').innerHTML = !inRoom ? '' : users.map(u =>
+      `<span class="av" style="background:${esc(u.color)}" title="${esc(u.name)}${u.id === me.id ? ' (คุณ)' : ''}">${esc(initials(u.name))}</span>`).join('');
+    $('#btnShare').textContent = inRoom ? 'Copy link' : 'Share';
+    $('#btnLeave').hidden = !inRoom;
+    $('#syncDot').hidden = !inRoom;
+    // Tag the row each other person is working in
+    $$('.who').forEach(el => { el.parentNode.style.boxShadow = ''; el.remove(); });
+    if (!inRoom) return;
+    users.forEach(u => {
+      const m = u.id !== me.id && /^([a-z]+):([a-z0-9]+)$/.exec(u.focus || '');
+      const row = m && $(`#tab-${m[1]} [data-id="${m[2]}"]`);
+      if (!row) return;
+      const tag = document.createElement('span');
+      tag.className = 'who'; tag.style.background = u.color; tag.textContent = u.name;
+      row.style.boxShadow = 'inset 2px 0 0 ' + u.color;
+      row.appendChild(tag);
+    });
+  }
+  function setSync(ok) {
+    const dot = $('#syncDot');
+    dot.classList.toggle('off', !ok);
+    dot.title = ok ? 'เชื่อมต่ออยู่ การแก้ไขถูกบันทึกในห้อง' : 'เชื่อมต่อไม่ได้ กำลังลองใหม่ (การแก้ไขยังอยู่ในเครื่อง)';
+  }
+  async function ensureName() {
+    let n = '';
+    try { n = localStorage.getItem(NAME_KEY) || ''; } catch (e) { /* storage unavailable */ }
+    if (!n) {
+      if (window.Swal) {
+        const r = await Swal.fire(Object.assign({}, swalBase, { title: 'ชื่อของคุณ', text: 'คนอื่นในห้องจะเห็นชื่อนี้', input: 'text', inputPlaceholder: 'เช่น Pakkanat',
+          showCancelButton: true, confirmButtonText: 'ตกลง', cancelButtonText: 'ยกเลิก', inputValidator: v => (v && v.trim() ? undefined : 'กรุณาใส่ชื่อ') }));
+        n = r.isConfirmed ? String(r.value).trim() : '';
+      } else n = (prompt('ชื่อของคุณ (คนอื่นในห้องจะเห็นชื่อนี้)') || '').trim();
+      if (!n) return false;
+      try { localStorage.setItem(NAME_KEY, n); } catch (e) { /* storage unavailable */ }
+    }
+    me.name = n.slice(0, 40);
+    return true;
+  }
+  function enterRoom(id, res) {
+    room = id; version = res.version; pending = []; users = res.users || []; lastBeat = Date.now();
+    S = normalize(res.doc); base = clone(S);
+    history.replaceState(null, '', location.pathname + '?room=' + id);
+    setSync(true);
+    renderers[curTab]();
+    renderPresence();
+    schedule();
+  }
+  function leaveRoom() {
+    if (room && navigator.sendBeacon) navigator.sendBeacon(API, JSON.stringify({ room, client: me, leave: true }));
+    room = null; clearTimeout(syncTimer);
+  }
+  function copyLink() {
+    const link = location.origin + location.pathname + '?room=' + room;
+    const fallback = () => showError('คัดลอกลิงก์ไม่สำเร็จ', link);
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(link).then(() => toast('คัดลอกลิงก์แล้ว ส่งให้คนที่จะมากรอกร่วมกันได้เลย'), fallback);
+    else fallback();
+  }
+  $('#btnShare').addEventListener('click', async () => {
+    if (room) { copyLink(); return; }
+    if (location.protocol === 'file:') { showError('ยังแชร์ไม่ได้', 'ต้องเปิด app จากเว็บที่ publish แล้ว (เช่น Netlify) ไฟล์ที่เปิดจากเครื่องโดยตรงแชร์ไม่ได้'); return; }
+    if (!(await ensureName())) return;
+    const id = (newId() + newId()).replace(/[^a-z0-9]/g, '').slice(0, 16);
+    try { enterRoom(id, await api({ room: id, create: S, since: -1, client: me, hb: true })); copyLink(); }
+    catch (err) { showError('สร้างลิงก์ไม่สำเร็จ', err.message); }
+  });
+  $('#btnLeave').addEventListener('click', () => {
+    askConfirm('ออกจากห้อง?', 'ข้อมูลในห้องยังอยู่ เข้าใหม่ได้ด้วยลิงก์เดิม หลังออกจะกลับไปเป็นข้อมูลในเครื่องของคุณ', 'ออกจากห้อง', 'question').then(ok => {
+      if (!ok) return;
+      leaveRoom();
+      location.href = location.pathname;
+    });
+  });
+  document.addEventListener('focusin', e => {
+    const row = e.target.closest && e.target.closest('.trow, .prow');
+    me.focus = row ? curTab + ':' + row.dataset.id : '';
+  });
+  document.addEventListener('visibilitychange', () => { if (room && !document.hidden) { clearTimeout(syncTimer); syncTimer = setTimeout(tick, 200); } });
+  window.addEventListener('pagehide', leaveRoom);
+  // Opening a shared link joins that room
+  const joinId = new URLSearchParams(location.search).get('room');
+  async function joinFromLink() {
+    const local = () => history.replaceState(null, '', location.pathname);
+    if (!(await ensureName())) { local(); return; }
+    try { enterRoom(joinId, await api({ room: joinId, since: -1, client: me, hb: true })); toast('เข้าห้องแล้ว'); }
+    catch (err) { local(); showError('เข้าห้องไม่ได้', err.status === 404 ? 'ไม่พบห้องนี้ ลิงก์อาจไม่ถูกต้อง' : err.message); }
+  }
+  if (joinId && location.protocol !== 'file:') {
+    if (document.readyState === 'complete') joinFromLink(); else window.addEventListener('load', joinFromLink);
+  }
+  renderPresence();
+
+  showTab('quote');
+})();
+</script>
+</body>
+</html>

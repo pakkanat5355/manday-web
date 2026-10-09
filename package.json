@@ -1,0 +1,13 @@
+{
+  "name": "manday-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Man-Day Estimator with shared rooms (Netlify Functions + Netlify Blobs)",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^11.1.4"
+  }
+}
