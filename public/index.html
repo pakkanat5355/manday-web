@@ -157,9 +157,13 @@
   .av:first-child { margin-left: 0; }
   .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); margin: 0 6px 0 4px; }
   .dot.off { background: var(--danger); }
-  #authGate { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 20px; background: var(--bg); }
-  .auth-card { width: min(420px, 100%); text-align: center; }
-  .auth-card p { color: var(--muted); }
+  #authGate { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 20px; background: radial-gradient(ellipse at 50% 15%, color-mix(in srgb, var(--focus) 10%, var(--bg)), var(--bg) 60%); }
+  .auth-card { width: min(400px, 100%); text-align: center; padding: 36px 32px; border-radius: 16px; box-shadow: 0 18px 60px rgba(24, 24, 27, .10); }
+  .auth-mark { width: 48px; height: 48px; margin: 0 auto 18px; display: grid; place-items: center; border-radius: 13px; background: var(--ink); color: var(--surface); font-size: 15px; font-weight: 700; letter-spacing: -.04em; }
+  .auth-card h1 { margin: 0; font-size: 22px; letter-spacing: -.02em; }
+  .auth-card .tagline { margin: 7px 0 24px; color: var(--muted); }
+  #googleSignInButton { min-height: 44px; display: flex; justify-content: center; }
+  #authStatus { min-height: 18px; margin: 12px 0 0; color: var(--danger); font-size: 12px; }
   #driveList { display: grid; gap: 8px; }
   .drive-file { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
   .drive-file:last-child { border-bottom: 0; }
@@ -225,7 +229,6 @@
       <button class="btn ghost" id="btnNew">โปรเจกต์ใหม่</button>
       <button class="btn primary" id="btnDriveSave" hidden>บันทึกใน Drive</button>
       <span class="hint" id="driveAccount"></span>
-      <button class="btn ghost" id="btnLogin">เข้าสู่ระบบ Google</button>
       <button class="btn ghost" id="btnLogout" hidden>ออกจากระบบ</button>
       <span class="sep"></span>
       <span class="avs" id="collabUsers"></span>
@@ -368,11 +371,11 @@
 
 <div id="authGate">
   <div class="card pad auth-card">
-    <h2>Man-Day Estimator</h2>
-    <p>เข้าสู่ระบบด้วย Google เพื่อบันทึกและเปิดแบบฟอร์มจาก Google Drive ส่วนตัว</p>
-    <button class="btn primary" id="btnGoogleStart">เข้าสู่ระบบและอนุญาต Google Drive</button>
+    <div class="auth-mark" aria-hidden="true">MD</div>
+    <h1>Man-Day Estimator</h1>
+    <p class="tagline">วางแผนและประเมินโครงการ</p>
+    <div id="googleSignInButton"></div>
     <p class="hint" id="authStatus" role="status"></p>
-    <p class="hint">แอปจะจัดเก็บไฟล์ไว้ในโฟลเดอร์ TRB-Manday-Estimator</p>
   </div>
 </div>
 
@@ -890,7 +893,7 @@ if (typeof document !== 'undefined') (function () {
 
   // Google Identity Services: access tokens stay in memory and are never written to local storage.
   const GOOGLE_CLIENT_ID = '144543484972-9smamjq725g58md6elhp79cuifalip6.apps.googleusercontent.com';
-  const DRIVE_SCOPE = 'openid email profile https://www.googleapis.com/auth/drive.file';
+  const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
   let driveToken = '', driveTokenExpires = 0, driveTokenClient = null, driveFolderId = '', driveFileId = '', driveUser = null;
   function getGoogleAccessToken(prompt) {
     return new Promise((resolve, reject) => {
@@ -910,23 +913,31 @@ if (typeof document !== 'undefined') (function () {
       } catch (error) { reject(error); }
     });
   }
-  async function completeGoogleLogin() {
-    const status = $('#authStatus');
-    status.textContent = 'กำลังเชื่อมต่อ Google...';
+  function completeGoogleLogin(response) {
     try {
-      await getGoogleAccessToken('select_account');
-      const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', { headers: { authorization: 'Bearer ' + driveToken } });
-      if (!r.ok) throw new Error('อ่านข้อมูลบัญชี Google ไม่สำเร็จ');
-      driveUser = await r.json();
-      $('#driveAccount').textContent = driveUser.email || driveUser.name || '';
-      $('#btnLogin').hidden = true; $('#btnLogout').hidden = false; $('#btnDriveSave').hidden = false;
+      const encoded = response.credential.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      const payload = JSON.parse(decodeURIComponent(Array.from(atob(encoded), c => '%' + c.charCodeAt(0).toString(16).padStart(2, '0')).join('')));
+      driveUser = { email: payload.email || '', name: payload.name || '' };
+      $('#driveAccount').textContent = driveUser.email || driveUser.name;
+      $('#btnLogout').hidden = false; $('#btnDriveSave').hidden = false;
       $('#authGate').hidden = true;
-      status.textContent = '';
+      $('#authStatus').textContent = '';
       if (joinId) joinFromLink();
     } catch (error) {
-      status.textContent = error.message;
+      $('#authStatus').textContent = 'เข้าสู่ระบบไม่สำเร็จ กรุณาลองอีกครั้ง';
     }
   }
+  function renderGoogleButton(attempt = 0) {
+    if (!window.google || !google.accounts || !google.accounts.id) {
+      if (attempt < 40) setTimeout(() => renderGoogleButton(attempt + 1), 150);
+      else $('#authStatus').textContent = 'โหลด Google Sign-In ไม่สำเร็จ กรุณารีเฟรชหน้า';
+      return;
+    }
+    google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: completeGoogleLogin });
+    google.accounts.id.renderButton($('#googleSignInButton'), { type: 'standard', theme: 'outline', size: 'large', text: 'signin_with', shape: 'rectangular', logo_alignment: 'left', width: 300 });
+  }
+  if (document.readyState === 'complete') renderGoogleButton();
+  else window.addEventListener('load', renderGoogleButton, { once: true });
   async function ensureDriveAccess() {
     if (driveToken && Date.now() < driveTokenExpires - 60000) return driveToken;
     return getGoogleAccessToken('');
@@ -1026,8 +1037,6 @@ if (typeof document !== 'undefined') (function () {
       S = normalize(data); save(); driveFileId = id; showTab('quote'); toast('เปิดแบบฟอร์มจาก Drive แล้ว');
     } catch (error) { showError('เปิดไฟล์ไม่สำเร็จ', error.message); }
   }
-  $('#btnGoogleStart').addEventListener('click', completeGoogleLogin);
-  $('#btnLogin').addEventListener('click', completeGoogleLogin);
   $('#btnDriveSave').addEventListener('click', saveToDrive);
   $('#btnDriveRefresh').addEventListener('click', renderDriveList);
   $('#btnDriveExcel').addEventListener('click', saveExcelToDrive);
@@ -1035,7 +1044,8 @@ if (typeof document !== 'undefined') (function () {
   $('#btnLogout').addEventListener('click', () => {
     if (driveToken && window.google && google.accounts && google.accounts.oauth2) google.accounts.oauth2.revoke(driveToken, () => {});
     driveToken = ''; driveTokenExpires = 0; driveFolderId = ''; driveFileId = ''; driveUser = null;
-    $('#driveAccount').textContent = ''; $('#btnLogin').hidden = false; $('#btnLogout').hidden = true; $('#btnDriveSave').hidden = true; $('#authGate').hidden = false;
+    if (window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect();
+    $('#driveAccount').textContent = ''; $('#btnLogout').hidden = true; $('#btnDriveSave').hidden = true; $('#authGate').hidden = false;
   });
 
   // ----- tabs -----
