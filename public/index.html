@@ -163,6 +163,9 @@
   .auth-card h1 { margin: 0; font-size: 22px; letter-spacing: -.02em; }
   .auth-card .tagline { margin: 7px 0 24px; color: var(--muted); }
   #googleSignInButton { min-height: 44px; display: flex; justify-content: center; }
+  .auth-divider { display: flex; align-items: center; gap: 12px; margin: 18px 0 14px; color: var(--muted); font-size: 12px; }
+  .auth-divider::before, .auth-divider::after { content: ''; height: 1px; flex: 1; background: var(--line); }
+  #btnLocalLogin { width: 300px; max-width: 100%; height: 40px; }
   #authStatus { min-height: 18px; margin: 12px 0 0; color: var(--danger); font-size: 12px; }
   #driveList { display: grid; gap: 8px; }
   .drive-file { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
@@ -219,7 +222,7 @@
       <button data-tab="tasks">Task Breakdown</button>
       <button data-tab="plan">Project Plan</button>
       <button data-tab="owners">Owner / Dept</button>
-      <button data-tab="drive">รายการของฉัน</button>
+      <button data-tab="drive" id="btnDriveTab" hidden>รายการของฉัน</button>
       <button data-tab="settings">ตั้งค่า</button>
     </nav>
     <div class="actions">
@@ -375,6 +378,8 @@
     <h1>Man-Day Estimator</h1>
     <p class="tagline">วางแผนและประเมินโครงการ</p>
     <div id="googleSignInButton"></div>
+    <div class="auth-divider"><span>หรือ</span></div>
+    <button class="btn" id="btnLocalLogin">เข้าใช้งานแบบ Local</button>
     <p class="hint" id="authStatus" role="status"></p>
   </div>
 </div>
@@ -894,7 +899,7 @@ if (typeof document !== 'undefined') (function () {
   // Google Identity Services: access tokens stay in memory and are never written to local storage.
   const GOOGLE_CLIENT_ID = '144543484972-9smamjq725g58md6elhp79cuifalip6.apps.googleusercontent.com';
   const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
-  let driveToken = '', driveTokenExpires = 0, driveTokenClient = null, driveFolderId = '', driveFileId = '', driveUser = null;
+  let driveToken = '', driveTokenExpires = 0, driveTokenClient = null, driveFolderId = '', driveFileId = '', driveUser = null, authMode = '';
   function getGoogleAccessToken(prompt) {
     return new Promise((resolve, reject) => {
       try {
@@ -918,14 +923,23 @@ if (typeof document !== 'undefined') (function () {
       const encoded = response.credential.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
       const payload = JSON.parse(decodeURIComponent(Array.from(atob(encoded), c => '%' + c.charCodeAt(0).toString(16).padStart(2, '0')).join('')));
       driveUser = { email: payload.email || '', name: payload.name || '' };
+      authMode = 'google';
       $('#driveAccount').textContent = driveUser.email || driveUser.name;
-      $('#btnLogout').hidden = false; $('#btnDriveSave').hidden = false;
+      $('#btnLogout').hidden = false; $('#btnDriveSave').hidden = false; $('#btnDriveTab').hidden = false;
       $('#authGate').hidden = true;
       $('#authStatus').textContent = '';
-      if (joinId) joinFromLink();
+      if (joinId && location.protocol !== 'file:') joinFromLink();
     } catch (error) {
       $('#authStatus').textContent = 'เข้าสู่ระบบไม่สำเร็จ กรุณาลองอีกครั้ง';
     }
+  }
+  function loginLocal() {
+    authMode = 'local';
+    $('#driveAccount').textContent = 'Local';
+    $('#btnLogout').hidden = false; $('#btnDriveSave').hidden = true; $('#btnDriveTab').hidden = true;
+    $('#authGate').hidden = true;
+    showTab('quote');
+    if (joinId && location.protocol !== 'file:') joinFromLink();
   }
   function renderGoogleButton(attempt = 0) {
     if (!window.google || !google.accounts || !google.accounts.id) {
@@ -1038,14 +1052,16 @@ if (typeof document !== 'undefined') (function () {
     } catch (error) { showError('เปิดไฟล์ไม่สำเร็จ', error.message); }
   }
   $('#btnDriveSave').addEventListener('click', saveToDrive);
+  $('#btnLocalLogin').addEventListener('click', loginLocal);
   $('#btnDriveRefresh').addEventListener('click', renderDriveList);
   $('#btnDriveExcel').addEventListener('click', saveExcelToDrive);
   $('#driveList').addEventListener('click', e => { const b = e.target.closest('[data-drive-open]'); if (b) openDriveFile(b.dataset.driveOpen); });
   $('#btnLogout').addEventListener('click', () => {
-    if (driveToken && window.google && google.accounts && google.accounts.oauth2) google.accounts.oauth2.revoke(driveToken, () => {});
+    if (authMode === 'google' && driveToken && window.google && google.accounts && google.accounts.oauth2) google.accounts.oauth2.revoke(driveToken, () => {});
     driveToken = ''; driveTokenExpires = 0; driveFolderId = ''; driveFileId = ''; driveUser = null;
     if (window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect();
-    $('#driveAccount').textContent = ''; $('#btnLogout').hidden = true; $('#btnDriveSave').hidden = true; $('#authGate').hidden = false;
+    authMode = '';
+    $('#driveAccount').textContent = ''; $('#btnLogout').hidden = true; $('#btnDriveSave').hidden = true; $('#btnDriveTab').hidden = true; $('#authGate').hidden = false;
   });
 
   // ----- tabs -----
