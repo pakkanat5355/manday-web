@@ -157,6 +157,13 @@
   .av:first-child { margin-left: 0; }
   .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); margin: 0 6px 0 4px; }
   .dot.off { background: var(--danger); }
+  #authGate { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 20px; background: var(--bg); }
+  .auth-card { width: min(420px, 100%); text-align: center; }
+  .auth-card p { color: var(--muted); }
+  #driveList { display: grid; gap: 8px; }
+  .drive-file { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  .drive-file:last-child { border-bottom: 0; }
+  .drive-file small { color: var(--muted); display: block; }
   .who { position: absolute; left: 2px; top: -8px; z-index: 2; padding: 0 5px; border-radius: 3px; color: #fff; font-size: 10px; line-height: 15px; white-space: nowrap; pointer-events: none; }
   div.swal2-popup.sw .swal2-input { width: 100%; height: 32px; margin: 12px 0 0; padding: 0 10px; font-size: 13px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; box-shadow: none; }
   div.swal2-popup.sw .swal2-validation-message { background: none; color: var(--danger); font-size: 12px; margin: 6px 0 0; padding: 0; }
@@ -208,6 +215,7 @@
       <button data-tab="tasks">Task Breakdown</button>
       <button data-tab="plan">Project Plan</button>
       <button data-tab="owners">Owner / Dept</button>
+      <button data-tab="drive">รายการของฉัน</button>
       <button data-tab="settings">ตั้งค่า</button>
     </nav>
     <div class="actions">
@@ -215,6 +223,10 @@
       <button class="btn ghost" id="btnExport" title="ไฟล์สำหรับ Import กลับเข้า app นี้">Export JSON</button>
       <button class="btn ghost" id="btnImport" title="เปิดไฟล์ .json ที่ Export ไว้">Import</button>
       <button class="btn ghost" id="btnNew">โปรเจกต์ใหม่</button>
+      <button class="btn primary" id="btnDriveSave" hidden>บันทึกใน Drive</button>
+      <span class="hint" id="driveAccount"></span>
+      <button class="btn ghost" id="btnLogin">เข้าสู่ระบบ Google</button>
+      <button class="btn ghost" id="btnLogout" hidden>ออกจากระบบ</button>
       <span class="sep"></span>
       <span class="avs" id="collabUsers"></span>
       <span class="dot" id="syncDot" hidden></span>
@@ -347,8 +359,24 @@
         <h3 style="margin-top:16px">Risk</h3><textarea data-list="risks" style="min-height:92px"></textarea><p class="hint">ระดับ | % ที่บวกเพิ่ม</p></div>
     </div>
   </section>
+
+  <section class="tab stack" id="tab-drive" hidden>
+    <div class="row"><button class="btn primary" id="btnDriveRefresh">รีเฟรชรายการ</button><button class="btn" id="btnDriveExcel">บันทึก Excel ปัจจุบันใน Drive</button><span class="hint" id="driveStatus"></span></div>
+    <div class="card" id="driveList"><div class="tempty">กำลังโหลดรายการ...</div></div>
+  </section>
 </main>
 
+<div id="authGate">
+  <div class="card pad auth-card">
+    <h2>Man-Day Estimator</h2>
+    <p>เข้าสู่ระบบด้วย Google เพื่อบันทึกและเปิดแบบฟอร์มจาก Google Drive ส่วนตัว</p>
+    <button class="btn primary" id="btnGoogleStart">เข้าสู่ระบบและอนุญาต Google Drive</button>
+    <p class="hint" id="authStatus" role="status"></p>
+    <p class="hint">แอปจะจัดเก็บไฟล์ไว้ในโฟลเดอร์ TRB-Manday-Estimator</p>
+  </div>
+</div>
+
+<script async defer src="https://accounts.google.com/gsi/client"></script>
 <script>
 const KEY = 'manday-estimator-v1';
 const SEP = '||';
@@ -860,8 +888,158 @@ if (typeof document !== 'undefined') (function () {
     else alert(title + '\n' + text);
   }
 
+  // Google Identity Services: access tokens stay in memory and are never written to local storage.
+  const GOOGLE_CLIENT_ID = '144543484972-9smamjq725g58md6elhp79cuifalip6.apps.googleusercontent.com';
+  const DRIVE_SCOPE = 'openid email profile https://www.googleapis.com/auth/drive.file';
+  let driveToken = '', driveTokenExpires = 0, driveTokenClient = null, driveFolderId = '', driveFileId = '', driveUser = null;
+  function getGoogleAccessToken(prompt) {
+    return new Promise((resolve, reject) => {
+      try {
+        if (!window.google || !google.accounts || !google.accounts.oauth2) throw new Error('Google Sign-In ยังโหลดไม่เสร็จ กรุณาลองอีกครั้ง');
+        driveTokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: GOOGLE_CLIENT_ID, scope: DRIVE_SCOPE, prompt,
+          callback: response => {
+            if (response.error || !response.access_token) return reject(new Error(response.error_description || response.error || 'Google ไม่อนุญาตให้เข้าใช้'));
+            driveToken = response.access_token;
+            driveTokenExpires = Date.now() + (Number(response.expires_in) || 3600) * 1000;
+            resolve(driveToken);
+          },
+          error_callback: error => reject(new Error(error.message || 'เปิดหน้าต่าง Google ไม่สำเร็จ'))
+        });
+        driveTokenClient.requestAccessToken({ prompt });
+      } catch (error) { reject(error); }
+    });
+  }
+  async function completeGoogleLogin() {
+    const status = $('#authStatus');
+    status.textContent = 'กำลังเชื่อมต่อ Google...';
+    try {
+      await getGoogleAccessToken('select_account');
+      const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', { headers: { authorization: 'Bearer ' + driveToken } });
+      if (!r.ok) throw new Error('อ่านข้อมูลบัญชี Google ไม่สำเร็จ');
+      driveUser = await r.json();
+      $('#driveAccount').textContent = driveUser.email || driveUser.name || '';
+      $('#btnLogin').hidden = true; $('#btnLogout').hidden = false; $('#btnDriveSave').hidden = false;
+      $('#authGate').hidden = true;
+      status.textContent = '';
+      if (joinId) joinFromLink();
+    } catch (error) {
+      status.textContent = error.message;
+    }
+  }
+  async function ensureDriveAccess() {
+    if (driveToken && Date.now() < driveTokenExpires - 60000) return driveToken;
+    return getGoogleAccessToken('');
+  }
+  async function driveFetch(url, options = {}) {
+    const token = await ensureDriveAccess();
+    const response = await fetch(url, Object.assign({}, options, { headers: Object.assign({}, options.headers || {}, { authorization: 'Bearer ' + token }) }));
+    if (!response.ok) {
+      let message = 'Google Drive ตอบกลับ HTTP ' + response.status;
+      try { const body = await response.json(); message = body.error && body.error.message || message; } catch (e) { /* keep HTTP message */ }
+      throw new Error(message);
+    }
+    return response;
+  }
+  async function getDriveFolder() {
+    if (driveFolderId) return driveFolderId;
+    const q = "mimeType='application/vnd.google-apps.folder' and name='TRB-Manday-Estimator' and 'root' in parents and trashed=false";
+    const url = 'https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(q) + '&fields=files(id,name)&pageSize=100';
+    const r = await driveFetch(url);
+    const data = await r.json();
+    if (data.files && data.files.length) driveFolderId = data.files[0].id;
+    else {
+      const created = await driveFetch('https://www.googleapis.com/drive/v3/files?fields=id', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name: 'TRB-Manday-Estimator', mimeType: 'application/vnd.google-apps.folder' })
+      });
+      driveFolderId = (await created.json()).id;
+    }
+    return driveFolderId;
+  }
+  function driveFilename() {
+    const base = quoteTitle(S.meta).replace(/[\\/:*?"<>|]+/g, ' ').replace(/[\r\n]+/g, ' ').trim() || 'Man-Day Estimation';
+    return base.slice(0, 120) + '.json';
+  }
+  async function saveToDrive() {
+    const status = $('#driveStatus');
+    try {
+      status.textContent = 'กำลังบันทึก...';
+      const folder = await getDriveFolder(), boundary = 'manday_' + newId();
+      const metadata = { name: driveFilename(), mimeType: 'application/json' };
+      if (!driveFileId) metadata.parents = [folder];
+      const payload = JSON.stringify(S, null, 2);
+      const body = '--' + boundary + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n' + JSON.stringify(metadata) +
+        '\r\n--' + boundary + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n' + payload + '\r\n--' + boundary + '--';
+      const url = 'https://www.googleapis.com/upload/drive/v3/files' + (driveFileId ? '/' + encodeURIComponent(driveFileId) : '') + '?uploadType=multipart&fields=id,name,modifiedTime';
+      const r = await driveFetch(url, { method: driveFileId ? 'PATCH' : 'POST', headers: { 'content-type': 'multipart/related; boundary=' + boundary }, body });
+      const saved = await r.json(); driveFileId = saved.id;
+      status.textContent = 'บันทึกแล้ว: ' + saved.name;
+      toast('บันทึกใน Google Drive แล้ว');
+      if (curTab === 'drive') renderDriveList();
+    } catch (error) {
+      status.textContent = '';
+      showError('บันทึกใน Drive ไม่สำเร็จ', error.message);
+    }
+  }
+  async function saveExcelToDrive() {
+    const status = $('#driveStatus');
+    try {
+      status.textContent = 'กำลังสร้างและบันทึก Excel...';
+      const folder = await getDriveFolder(), boundary = 'manday_' + newId();
+      const metadata = { name: driveFilename().replace(/\.json$/i, '.xlsx'), mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', parents: [folder] };
+      const prefix = '--' + boundary + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n' + JSON.stringify(metadata) +
+        '\r\n--' + boundary + '\r\nContent-Type: ' + metadata.mimeType + '\r\n\r\n';
+      const suffix = '\r\n--' + boundary + '--';
+      const file = new Blob([prefix, buildXlsx(S), suffix], { type: 'multipart/related; boundary=' + boundary });
+      const url = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name';
+      const response = await driveFetch(url, { method: 'POST', headers: { 'content-type': 'multipart/related; boundary=' + boundary }, body: file });
+      const saved = await response.json();
+      status.textContent = 'บันทึกแล้ว: ' + saved.name;
+      toast('บันทึก Excel ใน Google Drive แล้ว');
+    } catch (error) {
+      status.textContent = '';
+      showError('บันทึก Excel ใน Drive ไม่สำเร็จ', error.message);
+    }
+  }
+  async function renderDriveList() {
+    const box = $('#driveList'), status = $('#driveStatus');
+    box.innerHTML = '<div class="tempty">กำลังโหลดรายการ...</div>';
+    try {
+      const folder = await getDriveFolder();
+      const q = "'" + folder + "' in parents and mimeType='application/json' and trashed=false";
+      const url = 'https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(q) + '&orderBy=modifiedTime desc&pageSize=100&fields=files(id,name,modifiedTime,size)';
+      const data = await (await driveFetch(url)).json();
+      const files = data.files || [];
+      box.innerHTML = files.length ? files.map(f => `<div class="drive-file"><div>${esc(f.name)}<small>แก้ไขล่าสุด ${esc(f.modifiedTime ? new Date(f.modifiedTime).toLocaleString() : '')}</small></div><button class="btn" data-drive-open="${esc(f.id)}">เปิด</button></div>`).join('') : '<div class="tempty">ยังไม่มีแบบฟอร์มที่บันทึกไว้</div>';
+      status.textContent = files.length + ' ไฟล์ใน TRB-Manday-Estimator';
+    } catch (error) {
+      box.innerHTML = '<div class="tempty">โหลดรายการไม่สำเร็จ</div>';
+      status.textContent = error.message;
+    }
+  }
+  async function openDriveFile(id) {
+    if (room) { showError('เปิดไฟล์ไม่ได้', 'กรุณาออกจากห้องแชร์ก่อน เพื่อไม่ให้แทนที่ข้อมูลของทุกคน'); return; }
+    try {
+      const response = await driveFetch('https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(id) + '?alt=media');
+      const data = await response.json();
+      S = normalize(data); save(); driveFileId = id; showTab('quote'); toast('เปิดแบบฟอร์มจาก Drive แล้ว');
+    } catch (error) { showError('เปิดไฟล์ไม่สำเร็จ', error.message); }
+  }
+  $('#btnGoogleStart').addEventListener('click', completeGoogleLogin);
+  $('#btnLogin').addEventListener('click', completeGoogleLogin);
+  $('#btnDriveSave').addEventListener('click', saveToDrive);
+  $('#btnDriveRefresh').addEventListener('click', renderDriveList);
+  $('#btnDriveExcel').addEventListener('click', saveExcelToDrive);
+  $('#driveList').addEventListener('click', e => { const b = e.target.closest('[data-drive-open]'); if (b) openDriveFile(b.dataset.driveOpen); });
+  $('#btnLogout').addEventListener('click', () => {
+    if (driveToken && window.google && google.accounts && google.accounts.oauth2) google.accounts.oauth2.revoke(driveToken, () => {});
+    driveToken = ''; driveTokenExpires = 0; driveFolderId = ''; driveFileId = ''; driveUser = null;
+    $('#driveAccount').textContent = ''; $('#btnLogin').hidden = false; $('#btnLogout').hidden = true; $('#btnDriveSave').hidden = true; $('#authGate').hidden = false;
+  });
+
   // ----- tabs -----
-  const renderers = { quote: renderQuote, tasks: renderTasks, plan: renderPlan, owners: renderOwners, settings: renderSettings };
+  const renderers = { quote: renderQuote, tasks: renderTasks, plan: renderPlan, owners: renderOwners, drive: renderDriveList, settings: renderSettings };
   function showTab(name) {
     comboClose();
     curTab = name;
@@ -1324,6 +1502,7 @@ if (typeof document !== 'undefined') (function () {
   $('#btnNew').addEventListener('click', () => {
     askConfirm('เริ่มโปรเจกต์ใหม่?', (room ? 'คุณอยู่ในห้องแชร์: งานจะถูกล้างสำหรับทุกคนในห้อง ' : '') + 'งานทั้งหมดจะถูกล้าง (การตั้งค่ายังอยู่) ถ้ายังต้องใช้ให้ Export เก็บไว้ก่อน', 'ล้างและเริ่มใหม่').then(ok => {
       if (!ok) return;
+      driveFileId = '';
       const cfg = S.cfg; S = blankState(); S.cfg = cfg;
       save(); showTab('quote');
     });
@@ -1355,7 +1534,7 @@ if (typeof document !== 'undefined') (function () {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
-      try { S = normalize(JSON.parse(reader.result)); save(); showTab('quote'); toast('Import เรียบร้อย'); }
+      try { S = normalize(JSON.parse(reader.result)); driveFileId = ''; save(); showTab('quote'); toast('Import เรียบร้อย'); }
       catch (err) { showError('ไฟล์นี้อ่านไม่ได้', err.message); }
       e.target.value = '';
     };
@@ -1476,6 +1655,7 @@ if (typeof document !== 'undefined') (function () {
   }
   function enterRoom(id, res) {
     room = id; version = res.version; pending = []; users = res.users || []; lastBeat = Date.now();
+    driveFileId = '';
     S = normalize(res.doc); base = clone(S);
     history.replaceState(null, '', location.pathname + '?room=' + id);
     setSync(true);
@@ -1521,9 +1701,6 @@ if (typeof document !== 'undefined') (function () {
     if (!(await ensureName())) { local(); return; }
     try { enterRoom(joinId, await api({ room: joinId, since: -1, client: me, hb: true })); toast('เข้าห้องแล้ว'); }
     catch (err) { local(); showError('เข้าห้องไม่ได้', err.status === 404 ? 'ไม่พบห้องนี้ ลิงก์อาจไม่ถูกต้อง' : err.message); }
-  }
-  if (joinId && location.protocol !== 'file:') {
-    if (document.readyState === 'complete') joinFromLink(); else window.addEventListener('load', joinFromLink);
   }
   renderPresence();
 
