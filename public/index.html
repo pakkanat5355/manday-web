@@ -72,7 +72,7 @@
   #secOpts th:first-child, #secOpts td:first-child { padding-left: 0; }
   #secOpts input[type="number"] { width: 64px; text-align: right; }
 
-  /* 1. Sale summary */
+  /* 1. Estimate summary */
   .quote-wrap { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 16px; align-items: start; }
   @media (max-width: 880px) { .quote-wrap { grid-template-columns: 1fr; } }
   .sheet { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 36px 44px; max-width: 720px; font-size: 14px; }
@@ -90,7 +90,7 @@
   textarea.plain { font: inherit; min-height: 62px; margin-top: 3px; padding: 6px 8px; }
 
   /* 2. Task list: one compact line per task, details fold out underneath */
-  .tgrid { display: grid; grid-template-columns: 26px minmax(0, 1.9fr) minmax(0, 2.3fr) minmax(0, .85fr) 52px 52px 52px 112px 16px 58px 30px 26px 26px; gap: 0 4px; align-items: center; padding: 0 8px; }
+  .tgrid { display: grid; grid-template-columns: 82px minmax(0, 1.9fr) minmax(0, 2.3fr) minmax(0, .85fr) 52px 52px 52px 112px 16px 58px 48px 26px 26px; gap: 0 4px; align-items: center; padding: 0 8px; }
   .thead { height: 32px; border-bottom: 1px solid var(--line); font-size: 11.5px; color: var(--muted); }
   .thead span { padding: 0 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .trow { border-bottom: 1px solid var(--line); position: relative; }
@@ -123,32 +123,9 @@
   .tempty { padding: 22px; text-align: center; color: var(--muted); }
   @media (max-width: 860px) {
     .thead { display: none; }
-    .tmain { height: auto; padding-top: 6px; padding-bottom: 6px; grid-template-columns: 26px minmax(0, 1fr) 52px 52px 52px 16px 58px 26px; gap: 2px 4px; }
+    .tmain { height: auto; padding-top: 6px; padding-bottom: 6px; grid-template-columns: 82px minmax(0, 1fr) 52px 52px 52px 16px 58px 26px; gap: 2px 4px; }
     .tmain [data-combo="act"], .tmain [data-f="desc"], .tmain [data-combo="owner"], .tmain [data-combo="risk"] { grid-column: 2 / -1; }
     .tmain .idx { grid-row: 1; }
-  }
-
-  /* Project plan: editable rows + a timeline that scales to the available width */
-  .pgrid { display: grid; grid-template-columns: 26px minmax(0, 1.25fr) 104px 104px 44px 122px 44px 58px minmax(0, 1.5fr) 26px; gap: 0 4px; align-items: center; padding: 0 8px; }
-  .prow { height: 34px; border-bottom: 1px solid var(--line); position: relative; }
-  .prow:hover { background: var(--hover); }
-  .prow.grp { background: var(--field); }
-  .prow.grp [data-p="name"] { font-weight: 600; }
-  .prow input[type="date"] { padding: 0 4px; }
-  .pend { color: var(--muted); padding: 0 7px; white-space: nowrap; font-variant-numeric: tabular-nums; }
-  .ptrack { position: relative; height: 14px; margin: 0 6px; }
-  .pbar { position: absolute; top: 0; bottom: 0; min-width: 3px; border-radius: 3px; overflow: hidden; background: color-mix(in srgb, var(--c) 26%, transparent); }
-  .pbar i { display: block; height: 100%; background: var(--c); }
-  .s-idle { --c: var(--muted); } .s-run { --c: var(--focus); } .s-risk { --c: var(--amber); } .s-late { --c: var(--danger); } .s-test { --c: var(--violet); } .s-done { --c: var(--ok); }
-  .pbar.s-grp { --c: var(--ink); top: 5px; bottom: 5px; border-radius: 2px; }
-  .pmonths { position: relative; align-self: stretch; margin: 0 6px; }
-  .pmonths span { position: absolute; top: 0; bottom: 0; display: flex; align-items: center; padding: 0 5px; border-left: 1px solid var(--line); }
-  .has-today .ptrack::before { content: ''; position: absolute; top: -10px; bottom: -10px; left: var(--today); width: 1px; background: var(--danger); opacity: .45; }
-  .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; }
-  .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; background: var(--c); margin-right: 5px; }
-  @media (max-width: 980px) {
-    .pgrid { grid-template-columns: 26px minmax(0, 1fr) 90px 96px 44px 122px 44px 58px 26px; }
-    .ptrack, .pmonths { display: none; }
   }
 
   /* Sharing: who is in the room, and which row each person is on */
@@ -157,20 +134,6 @@
   .av:first-child { margin-left: 0; }
   .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); margin: 0 6px 0 4px; }
   .dot.off { background: var(--danger); }
-  #authGate { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 20px; background: radial-gradient(ellipse at 50% 15%, color-mix(in srgb, var(--focus) 10%, var(--bg)), var(--bg) 60%); }
-  .auth-card { width: min(400px, 100%); text-align: center; padding: 36px 32px; border-radius: 16px; box-shadow: 0 18px 60px rgba(24, 24, 27, .10); }
-  .auth-mark { width: 48px; height: 48px; margin: 0 auto 18px; display: grid; place-items: center; border-radius: 13px; background: var(--ink); color: var(--surface); font-size: 15px; font-weight: 700; letter-spacing: -.04em; }
-  .auth-card h1 { margin: 0; font-size: 22px; letter-spacing: -.02em; }
-  .auth-card .tagline { margin: 7px 0 24px; color: var(--muted); }
-  #googleSignInButton { min-height: 44px; display: flex; justify-content: center; }
-  .auth-divider { display: flex; align-items: center; gap: 12px; margin: 18px 0 14px; color: var(--muted); font-size: 12px; }
-  .auth-divider::before, .auth-divider::after { content: ''; height: 1px; flex: 1; background: var(--line); }
-  #btnLocalLogin { width: 300px; max-width: 100%; height: 40px; }
-  #authStatus { min-height: 18px; margin: 12px 0 0; color: var(--danger); font-size: 12px; }
-  #driveList { display: grid; gap: 8px; }
-  .drive-file { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
-  .drive-file:last-child { border-bottom: 0; }
-  .drive-file small { color: var(--muted); display: block; }
   .who { position: absolute; left: 2px; top: -8px; z-index: 2; padding: 0 5px; border-radius: 3px; color: #fff; font-size: 10px; line-height: 15px; white-space: nowrap; pointer-events: none; }
   div.swal2-popup.sw .swal2-input { width: 100%; height: 32px; margin: 12px 0 0; padding: 0 10px; font-size: 13px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; box-shadow: none; }
   div.swal2-popup.sw .swal2-validation-message { background: none; color: var(--danger); font-size: 12px; margin: 6px 0 0; padding: 0; }
@@ -218,11 +181,8 @@
   <div class="bar">
     <span class="brand">Man-Day Estimator</span>
     <nav>
-      <button data-tab="quote" class="on">สรุปให้ Sale</button>
+      <button data-tab="quote" class="on">Estimate Man-day</button>
       <button data-tab="tasks">Task Breakdown</button>
-      <button data-tab="plan">Project Plan</button>
-      <button data-tab="owners">Owner / Dept</button>
-      <button data-tab="drive" id="btnDriveTab" hidden>รายการของฉัน</button>
       <button data-tab="settings">ตั้งค่า</button>
     </nav>
     <div class="actions">
@@ -230,9 +190,6 @@
       <button class="btn ghost" id="btnExport" title="ไฟล์สำหรับ Import กลับเข้า app นี้">Export JSON</button>
       <button class="btn ghost" id="btnImport" title="เปิดไฟล์ .json ที่ Export ไว้">Import</button>
       <button class="btn ghost" id="btnNew">โปรเจกต์ใหม่</button>
-      <button class="btn primary" id="btnDriveSave" hidden>บันทึกใน Drive</button>
-      <span class="hint" id="driveAccount"></span>
-      <button class="btn ghost" id="btnLogout" hidden>ออกจากระบบ</button>
       <span class="sep"></span>
       <span class="avs" id="collabUsers"></span>
       <span class="dot" id="syncDot" hidden></span>
@@ -281,7 +238,7 @@
   <section class="tab" id="tab-tasks" hidden>
     <div class="card">
       <div class="tgrid thead">
-        <span class="num">#</span>
+        <span>Task ID</span>
         <span>Breakdown Activity</span>
         <span>Description (แสดงในใบสรุป)</span>
         <span>Owner</span>
@@ -291,7 +248,7 @@
         <span>Risk</span>
         <span></span>
         <span class="num" title="(O + 4M + P) / 6 × (1 + Risk) ปัดขึ้นทีละ 0.5">MH</span>
-        <span title="ไม่คิดเงิน: ไม่นับในใบสรุปให้ Sale" style="padding:0;text-align:center">N/C</span>
+        <span title="คิดเป็นค่าใช้จ่ายและรวมใน Estimate" style="padding:0;text-align:center">Charge</span>
         <span></span><span></span>
       </div>
       <div id="taskList"></div>
@@ -301,46 +258,10 @@
         <span class="total"><span class="hint" id="sumRaw"></span> &nbsp; รวม <b id="sumFinal"></b></span>
       </div>
     </div>
-    <p class="hint">O / M / P กรอกเป็นชั่วโมง · MH = (O + 4M + P) / 6 × (1 + Risk) ปัดขึ้นทีละ 0.5 · กด ▾ ท้ายแถวเพื่อซ่อน / แสดง Role, Situation, Suggest P และ SD · <b style="color:var(--danger)">H</b> = SD ≥ 50% ของ MH ควรพิจารณาเพิ่ม Risk</p>
+    <p class="hint">O / M / P กรอกเป็นชั่วโมง · MH = (O + 4M + P) / 6 × (1 + Risk) ปัดขึ้นทีละ 0.5 · ติ๊ก Charge เพื่อรวมงานใน Estimate · กด ▾ เพื่อกรอก CR / Scope, Role และ Situation · <b style="color:var(--danger)">H</b> = SD ≥ 50% ของ MH</p>
   </section>
 
-  <!-- Project plan -->
-  <section class="tab stack" id="tab-plan" hidden>
-    <div class="row">
-      <label class="hint" style="display:flex;align-items:center;gap:6px">เริ่มโครงการ <input type="date" id="planStart"></label>
-      <button class="btn primary" id="btnPlanGen">สร้างจากงานที่กรอกอยู่</button>
-      <button class="btn" id="btnPlanImport">สร้างจากไฟล์ JSON</button>
-      <input type="file" id="filePlan" accept=".json,application/json" hidden>
-      <span class="hint" id="planSummary" style="margin-left:auto"></span>
-    </div>
-    <div class="card" id="planCard">
-      <div class="pgrid thead">
-        <span class="num">#</span><span>Task</span><span>PIC</span><span>Status</span><span class="num">%</span><span>Start</span>
-        <span class="num" title="จำนวนวันทำการ">Days</span><span>End</span><div class="pmonths" id="planMonths"></div><span></span>
-      </div>
-      <div id="planList"></div>
-      <div class="tbar">
-        <button class="btn" id="btnPlanAdd">+ เพิ่มงาน</button>
-        <button class="btn ghost" id="btnPlanGroup">+ เพิ่มหัวข้อ</button>
-        <span class="hint legend" style="margin-left:auto">
-          <span class="s-idle"><i></i>Not Start / Pending</span><span class="s-run"><i></i>On Going</span><span class="s-test"><i></i>Testing</span>
-          <span class="s-risk"><i></i>At Risk</span><span class="s-late"><i></i>Delay</span><span class="s-done"><i></i>Completed</span>
-        </span>
-      </div>
-    </div>
-    <p class="hint">แผนเริ่มต้นเรียงงานต่อกันตามลำดับหมวด โดยคิด 1 วัน = ชั่วโมงต่อ Man-day ในหน้าตั้งค่า และข้ามเสาร์-อาทิตย์ (ไม่ข้ามวันหยุดนักขัตฤกษ์) · แก้ Start / Days / PIC ของแต่ละงานได้เอง · เปลี่ยนวันเริ่มโครงการ = เลื่อนทุกงานตาม · ส่วนทึบในแถบ = Progress</p>
-  </section>
-
-  <!-- 3. Owners -->
-  <section class="tab" id="tab-owners" hidden>
-    <div class="cols2">
-      <div class="card"><table id="ownerTable"></table></div>
-      <div class="card"><table id="deptTable"></table></div>
-    </div>
-    <p class="hint">รวมทุกงาน (รวมงานที่ติ๊ก N/C ด้วย เพราะเป็น workload จริง)</p>
-  </section>
-
-  <!-- 4. Settings -->
+  <!-- Settings: master data supporting the two working views -->
   <section class="tab stack" id="tab-settings" hidden>
     <div class="row">
       <button class="btn primary" id="btnCfgEdit">Edit</button>
@@ -352,9 +273,6 @@
       <h3>การคำนวณ</h3>
       <div class="fields" style="max-width:520px">
         <label class="f">ชั่วโมงต่อ 1 Man-day <input type="number" min="1" step="0.5" data-cfg="hpd"></label>
-        <label class="f">ปัด Man-day ของแต่ละหมวดขึ้นทีละ
-          <input data-cfg="mdStep" data-combo="mdStep" autocomplete="off">
-        </label>
       </div>
     </div>
     <div class="cols2">
@@ -366,36 +284,19 @@
     </div>
   </section>
 
-  <section class="tab stack" id="tab-drive" hidden>
-    <div class="row"><button class="btn primary" id="btnDriveRefresh">รีเฟรชรายการ</button><button class="btn" id="btnDriveExcel">บันทึก Excel ปัจจุบันใน Drive</button><span class="hint" id="driveStatus"></span></div>
-    <div class="card" id="driveList"><div class="tempty">กำลังโหลดรายการ...</div></div>
-  </section>
 </main>
-
-<div id="authGate">
-  <div class="card pad auth-card">
-    <div class="auth-mark" aria-hidden="true">MD</div>
-    <h1>Man-Day Estimator</h1>
-    <p class="tagline">วางแผนและประเมินโครงการ</p>
-    <div id="googleSignInButton"></div>
-    <div class="auth-divider"><span>หรือ</span></div>
-    <button class="btn" id="btnLocalLogin">เข้าใช้งานแบบ Local</button>
-    <p class="hint" id="authStatus" role="status"></p>
-  </div>
-</div>
-
-<script async defer src="https://accounts.google.com/gsi/client"></script>
 <script>
 const KEY = 'manday-estimator-v1';
 const SEP = '||';
 
 const DEFAULT_CFG = {
   hpd: 8,
-  mdStep: 0.25,
   sections: [
     { name: 'Project Management & Requirement', items: ['Project Management', 'Requirement Workshop', 'FRS Preparation'] },
-    { name: 'Implementation', items: ['Development / Configuration / Unit Test'] },
+    { name: 'Infrastructure Setup', items: ['Infrastructure & Cloud Setup', 'User Account & Join AD', 'Patch OS & Hardening', 'Firewall Policy', 'Voice Gateway Installation', 'Application Platform Installation'] },
+    { name: 'Implementation', items: ['Feature / Task #1', 'Feature / Task #2', 'Feature / Task #3', 'Feature / Task #4'] },
     { name: 'System Testing & UAT', items: ['System Integration / E2E Test', 'Test Script Preparation', 'UAT Preparation & Training & Handout', 'UAT Support'] },
+    { name: 'Security & Compliance', items: ['SAST / DAST', 'VA Scan', 'Pen Test'] },
     { name: 'Deployment & Go-Live', items: ['Deployment Document', 'UAT Deployment', 'Production Deployment', 'Go-Live Support', 'On-Site Standby', 'On-Call Standby'] },
     { name: 'Training & Handover', items: ['Application Training', 'Training Material / Handout', 'Knowledge Transfer', 'Final Documentation'] }
   ],
@@ -422,18 +323,19 @@ const DEFAULT_CFG = {
 function clone(o) { return JSON.parse(JSON.stringify(o)); }
 function today() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 function newId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
-function newTask() { return { id: newId(), act: '', desc: '', owner: '', role: '', sit: '', o: '', m: '', p: '', risk: 0, nc: false }; }
+function newTask() { return { id: newId(), taskNo: '', scope: '', act: '', desc: '', owner: '', role: '', sit: '', o: '', m: '', p: '', risk: 0, nc: false }; }
 function blankState() {
-  return { meta: { customer: '', project: '', jobId: '', date: today(), remark: '' }, cfg: clone(DEFAULT_CFG), tasks: [newTask()], secOpt: {}, plan: { start: today(), rows: [] } };
+  const first = newTask(); first.taskNo = 'Task-001';
+  return { meta: { customer: '', project: '', jobId: '', date: today(), remark: '' }, cfg: clone(DEFAULT_CFG), tasks: [first], secOpt: {} };
 }
 function normalize(raw) {
   const s = blankState();
   if (!raw || typeof raw !== 'object') return s;
   Object.assign(s.meta, raw.meta || {});
   Object.assign(s.cfg, raw.cfg || {});
-  if (Array.isArray(raw.tasks)) s.tasks = raw.tasks.map(t => Object.assign(newTask(), t));
+  if (!Array.isArray(s.cfg.sections) || !s.cfg.sections.some(x => x.name === 'Infrastructure Setup') || !s.cfg.sections.some(x => x.name === 'Security & Compliance')) s.cfg.sections = clone(DEFAULT_CFG.sections);
+  if (Array.isArray(raw.tasks)) s.tasks = raw.tasks.map((t, i) => Object.assign(newTask(), { taskNo: 'Task-' + String(i + 1).padStart(3, '0') }, t));
   s.secOpt = raw.secOpt || {};
-  if (raw.plan && Array.isArray(raw.plan.rows)) s.plan = { start: raw.plan.start || s.plan.start, rows: raw.plan.rows };
   return s;
 }
 
@@ -465,7 +367,7 @@ function sectionOf(t, cfg) {
   return cfg.sections.some(s => s.name === name) ? name : null;
 }
 
-// Sale summary: one entry per section that has chargeable hours
+// Estimate summary: one entry per section that has chargeable hours
 function buildQuote(state) {
   const cfg = state.cfg, out = [], unassigned = { count: 0, mh: 0 };
   const bySec = {};
@@ -481,14 +383,13 @@ function buildQuote(state) {
     if (line && !b.lines.includes(line)) b.lines.push(line);
   });
   cfg.sections.forEach((s, i) => {
-    const b = bySec[s.name];
-    if (!b) return;
+    const b = bySec[s.name] || { mh: 0, lines: [] };
     const opt = secOption(state, s.name, i);
-    const auto = ceilTo(b.mh / cfg.hpd, cfg.mdStep);
+    const auto = b.mh / cfg.hpd;
     const override = opt.override !== '' && opt.override != null && isFinite(parseFloat(opt.override));
     out.push({ name: s.name, mh: b.mh, auto, md: override ? parseFloat(opt.override) : auto, lines: opt.hide ? [] : b.lines });
   });
-  const total = Math.round(out.reduce((a, s) => a + s.md, 0) * 1e6) / 1e6;
+  const total = ceilTo(out.reduce((a, s) => a + s.md, 0), 0.5);
   return { sections: out, total, unassigned };
 }
 // Default: the first section (PM & Requirement) shows no sub-lines
@@ -529,15 +430,13 @@ function textToSections(text) {
 // Keep applyOps() in sync with netlify/lib/room-core.mjs
 function applyOps(doc, ops) {
   const bad = k => k === '__proto__' || k === 'constructor' || k === 'prototype';
-  const listOf = n => (n === 'tasks' ? doc.tasks : n === 'plan' ? doc.plan.rows : null);
+  const listOf = n => (n === 'tasks' ? doc.tasks : null);
   ops.forEach(op => {
     if (!op || typeof op !== 'object') return;
     if (op.t === 'meta' || op.t === 'cfg' || op.t === 'sec') {
       const target = op.t === 'meta' ? doc.meta : op.t === 'cfg' ? doc.cfg : doc.secOpt;
       if (typeof op.k !== 'string' || bad(op.k)) return;
       if (op.v === undefined) delete target[op.k]; else target[op.k] = op.v;
-    } else if (op.t === 'planStart') {
-      doc.plan.start = op.v;
     } else {
       const list = listOf(op.list);
       if (!list) return;
@@ -563,8 +462,7 @@ function diffState(a, b) {
   const keys = (x, y) => Array.from(new Set(Object.keys(x || {}).concat(Object.keys(y || {}))));
   [['meta', a.meta, b.meta], ['cfg', a.cfg, b.cfg], ['sec', a.secOpt, b.secOpt]].forEach(g =>
     keys(g[1], g[2]).forEach(k => { if (!same(g[1][k], g[2][k])) ops.push({ t: g[0], k, v: g[2][k] }); }));
-  if (a.plan.start !== b.plan.start) ops.push({ t: 'planStart', v: b.plan.start });
-  [['tasks', a.tasks, b.tasks], ['plan', a.plan.rows, b.plan.rows]].forEach(g => {
+  [['tasks', a.tasks, b.tasks]].forEach(g => {
     const list = g[0], before = new Map(g[1].map(r => [r.id, r])), after = new Set(g[2].map(r => r.id));
     g[1].forEach(r => { if (!after.has(r.id)) ops.push({ t: 'del', list, id: r.id }); });
     g[2].forEach((r, i) => {
@@ -579,70 +477,7 @@ function diffState(a, b) {
 function opKey(op) {
   if (op.t === 'meta' || op.t === 'cfg' || op.t === 'sec') return op.t + '|' + op.k;
   if (op.t === 'row') return 'row|' + op.list + '|' + op.id + '|' + op.f;
-  return op.t === 'planStart' ? 'planStart' : null;
-}
-
-// ---------- Project plan (dates are 'YYYY-MM-DD' strings; weekends are skipped, public holidays are not) ----------
-const PLAN_STATUS = ['Not Start', 'On Going', 'At Risk', 'Delay', 'Pending', 'Testing', 'Completed'];
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-function parseD(s) { const p = String(s).split('-').map(Number); return new Date(Date.UTC(p[0], p[1] - 1, p[2])); }
-function fmtD(d) { return d.toISOString().slice(0, 10); }
-function validD(s) { return /^\d{4}-\d{2}-\d{2}$/.test(s || '') && !isNaN(parseD(s)); }
-function dayNum(s) { return Math.round(parseD(s) / 86400000); }
-function isWeekend(d) { const g = d.getUTCDay(); return g === 0 || g === 6; }
-function nextWorkday(s) { const d = parseD(s); while (isWeekend(d)) d.setUTCDate(d.getUTCDate() + 1); return fmtD(d); }
-function addWorkdays(s, n) {
-  const d = parseD(nextWorkday(s)), step = n < 0 ? -1 : 1;
-  for (let k = Math.abs(n); k > 0;) { d.setUTCDate(d.getUTCDate() + step); if (!isWeekend(d)) k--; }
-  return fmtD(d);
-}
-function workdayDiff(a, b) {           // working days from a to b (negative when b is earlier)
-  a = nextWorkday(a); b = nextWorkday(b);
-  if (a === b) return 0;
-  const sign = a < b ? 1 : -1, d = parseD(sign > 0 ? a : b), end = sign > 0 ? b : a;
-  let n = 0;
-  while (fmtD(d) < end) { d.setUTCDate(d.getUTCDate() + 1); if (!isWeekend(d)) n++; }
-  return sign * n;
-}
-function planStart(r, plan) { return nextWorkday(validD(r.start) ? r.start : (validD(plan.start) ? plan.start : today())); }
-function planDays(r) { return Math.max(1, Math.round(num(r.days)) || 1); }
-function planEnd(r, plan) { return addWorkdays(planStart(r, plan), planDays(r) - 1); }
-function planStats(plan) {
-  const tasks = plan.rows.filter(r => r.type !== 'group');
-  if (!tasks.length) return null;
-  let min = null, max = null, prog = 0;
-  tasks.forEach(r => {
-    const a = planStart(r, plan), b = planEnd(r, plan);
-    if (!min || a < min) min = a;
-    if (!max || b > max) max = b;
-    prog += Math.min(100, Math.max(0, num(r.progress)));
-  });
-  return { min, max, total: dayNum(max) - dayNum(min) + 1, workdays: workdayDiff(min, max) + 1, avg: prog / tasks.length, count: tasks.length };
-}
-// One work stream: tasks follow each other in section order, small tasks share a day
-function buildPlan(state, start) {
-  const cfg = state.cfg, hpd = num(cfg.hpd) || 8, rows = [];
-  const groups = cfg.sections.map(s => ({ name: s.name, tasks: [] })), other = { name: 'Other', tasks: [] };
-  state.tasks.forEach(t => {
-    const c = calcTask(t, cfg);
-    if (!c.final) return;
-    const sec = sectionOf(t, cfg);
-    (groups.find(g => g.name === sec) || other).tasks.push({ t, mh: c.final });
-  });
-  const first = nextWorkday(validD(start) ? start : today());
-  let hours = 0;
-  groups.concat(other).forEach(g => {
-    if (!g.tasks.length) return;
-    rows.push({ id: newId(), type: 'group', name: g.name });
-    g.tasks.forEach(x => {
-      const a = Math.floor(hours / hpd + 1e-9);
-      hours += x.mh;
-      const b = Math.max(a, Math.ceil(hours / hpd - 1e-9) - 1);
-      rows.push({ id: newId(), type: 'task', name: (x.t.desc || '').trim() || String(x.t.act).split(SEP)[1] || 'Task', pic: x.t.owner || '',
-        start: addWorkdays(first, a), days: b - a + 1, status: 'Not Start', progress: 0 });
-    });
-  });
-  return rows;
+  return null;
 }
 
 // ---------- Excel export (.xlsx with live formulas, same layout as the original template) ----------
@@ -662,6 +497,7 @@ function cellXml(ref, cell) {
     const str = typeof cell.v === 'string';
     return `<c r="${ref}"${s}${str ? ' t="str"' : ''}><f>${xmlEsc(cell.f)}</f><v>${xmlEsc(cell.v)}</v></c>`;
   }
+  if (typeof cell.v === 'boolean') return `<c r="${ref}"${s} t="b"><v>${cell.v ? 1 : 0}</v></c>`;
   if (typeof cell.v === 'number') return `<c r="${ref}"${s}><v>${cell.v}</v></c>`;
   return `<c r="${ref}"${s} t="inlineStr"><is><t xml:space="preserve">${xmlEsc(cell.v)}</t></is></c>`;
 }
@@ -747,21 +583,23 @@ function buildXlsx(state) {
   const tb = makeSheet(), last = state.tasks.length + SPARE + 1;
   head(tb, [['A', 'No.'], ['B', 'CR / Scope'], ['C', 'Description'], ['D', 'Breakdown Activity'], ['E', 'Quote Item'], ['F', 'Task Owner'], ['G', 'Dept'],
     ['H', 'Role'], ['I', 'Situation'], ['J', 'O'], ['K', 'M'], ['L', 'P'], ['M', 'Estimate MH (raw)'], ['N', 'Suggest P by R'], ['O', 'Suggest P by S'],
-    ['P', 'SD (RAW MH)'], ['Q', 'Suggest Risk'], ['R', 'Risk'], ['S', 'Estimate MH (final)'], ['T', 'Non Chargeable (Y)']]);
-  const itemMh = {}, ownerMh = {}, deptMh = {};
+    ['P', 'SD (RAW MH)'], ['Q', 'Suggest Risk'], ['R', 'Risk'], ['S', 'Estimate MH (final)'], ['T', 'Chargeable']]);
+  const itemMh = {};
+  let allMh = 0, nonChargeMh = 0;
   for (let r = 2; r <= last; r++) {
     const t = state.tasks[r - 2] || newTask(), real = r - 2 < state.tasks.length;
     const c = calcTask(t, cfg), parts = String(t.act || '').split(SEP);
     const act = acts.find(a => a.sec === parts[0] && a.item === parts[1]);
     const qno = act ? act.no : '';
     if (real) {
-      tb.set('A', r, V(r - 1)); tb.set('C', r, V(t.desc)); tb.set('D', r, V(parts[1] || ''));
+      tb.set('A', r, V(t.taskNo || ('Task-' + String(r - 1).padStart(3, '0')))); tb.set('B', r, V(t.scope || ''));
+      tb.set('C', r, V(t.desc)); tb.set('D', r, V(parts[1] || ''));
       tb.set('F', r, V(t.owner)); tb.set('H', r, V(t.role)); tb.set('I', r, V(t.sit));
       ['o', 'm', 'p'].forEach((k, i) => { if (t[k] !== '' && t[k] != null) tb.set('JKL'[i], r, V(num(t[k]))); });
-      if (t.nc) tb.set('T', r, V('Y'));
+      tb.set('T', r, V(!t.nc));
       if (qno && !t.nc) itemMh[qno] = (itemMh[qno] || 0) + c.final;
-      if (t.owner) ownerMh[t.owner] = (ownerMh[t.owner] || 0) + c.final;
-      if (c.dept) deptMh[c.dept] = (deptMh[c.dept] || 0) + c.final;
+      allMh += c.final;
+      if (t.nc) nonChargeMh += c.final;
     }
     // Duplicate activity names can't be resolved by a lookup, so the number is written as a value
     if (dupeNames) tb.set('E', r, V(qno));
@@ -781,69 +619,39 @@ function buildXlsx(state) {
     cfg.roles.length && [`H2:H${last}`, `List!$G$2:$G$${cfg.roles.length + 1}`],
     cfg.situations.length && [`I2:I${last}`, `List!$A$2:$A$${cfg.situations.length + 1}`],
     cfg.risks.length && [`R2:R${last}`, `List!$E$2:$E$${cfg.risks.length + 1}`],
-    [`T2:T${last}`, '"Y"']
+    [`T2:T${last}`, '"TRUE,FALSE"']
   ];
 
   // Estimate Man-day (Auto Fill)
-  const est = makeSheet(), n = cfg.sections.length + acts.length;
-  const totalRow = n + 3, hpdRow = n + 4, mdRow = n + 5, secRows = [];
-  head(est, [['A', 'No.'], ['B', 'Task'], ['C', 'Estimate MH'], ['D', 'Estimate MD'], ['E', 'Man-day (Quote)']]);
-  let r = 2, totalMh = 0, totalMd = 0;
+  const est = makeSheet();
+  head(est, [['A', 'No.'], ['B', 'Task'], ['C', 'Description'], ['D', 'Estimate MH'], ['E', 'Man-day']]);
+  let r = 2;
   cfg.sections.forEach((s, i) => {
     const secRow = r++, mh = s.items.reduce((a, it, j) => a + (itemMh[(i + 1) + '.' + (j + 1)] || 0), 0);
-    const opt = secOption(state, s.name, i), auto = ceilTo(mh / cfg.hpd, cfg.mdStep);
+    const opt = secOption(state, s.name, i), auto = mh / cfg.hpd;
     const override = opt.override !== '' && opt.override != null && isFinite(parseFloat(opt.override));
-    secRows.push(secRow); totalMh += mh; totalMd += override ? parseFloat(opt.override) : auto;
     est.set('A', secRow, V(i + 1, SEC)); est.set('B', secRow, V(s.name, SEC));
-    est.set('C', secRow, s.items.length ? Fm(`SUM(C${secRow + 1}:C${secRow + s.items.length})`, mh, SEC) : V(0, SEC));
-    est.set('D', secRow, Fm(`C${secRow}/$C$${hpdRow}`, mh / cfg.hpd, SEC));
-    est.set('E', secRow, override ? V(parseFloat(opt.override), SEC) : Fm(`CEILING(D${secRow},${cfg.mdStep})`, auto, SEC));
+    est.set('C', secRow, V(`------------ ${s.name} ------------`, SEC));
+    est.set('E', secRow, override ? V(parseFloat(opt.override), SEC) : Fm(`SUM(D${secRow + 1}:D${secRow + s.items.length})/$D$${cfg.sections.length + acts.length + 5}`, auto, SEC));
     s.items.forEach((it, j) => {
       const no = (i + 1) + '.' + (j + 1), v = itemMh[no] || 0;
-      est.set('A', r, V(no)); est.set('B', r, V(it));
-      est.set('C', r, Fm(`SUMPRODUCT((${TB}$E$2:$E$${last}=A${r})*(${TB}$T$2:$T$${last}<>"Y")*${TB}$S$2:$S$${last})`, v));
-      est.set('D', r, Fm(`C${r}/$C$${hpdRow}`, v / cfg.hpd));
+      est.set('A', r, V(no)); est.set('B', r, V(it)); est.set('C', r, V(it));
+      est.set('D', r, Fm(`SUMIFS(${TB}$S$2:$S$${last},${TB}$E$2:$E$${last},A${r},${TB}$T$2:$T$${last},TRUE)`, v));
       r++;
     });
   });
-  const sumOf = col => secRows.length ? secRows.map(x => col + x).join('+') : '0';
-  est.set('B', totalRow, V('Total Man-Hours (chargeable)', BOLD)); est.set('C', totalRow, Fm(sumOf('C'), totalMh, BOLD));
-  est.set('B', hpdRow, V('Hours = 1 Man-day')); est.set('C', hpdRow, V(num(cfg.hpd)));
-  est.set('B', mdRow, V('Total Man-days', BOLD)); est.set('E', mdRow, Fm(sumOf('E'), Math.round(totalMd * 1e6) / 1e6, BOLD));
-
-  // Task Owner & Dept MH
-  const own = makeSheet(), depts = [];
-  cfg.owners.forEach(o => { if (o[1] && !depts.includes(o[1])) depts.push(o[1]); });
-  head(own, [['A', 'Task Owner'], ['B', 'Total MH'], ['D', 'Dept'], ['E', 'Total MH']]);
-  cfg.owners.forEach((o, i) => { own.set('A', i + 2, V(o[0])); own.set('B', i + 2, Fm(`SUMIF(${TB}$F:$F,A${i + 2},${TB}$S:$S)`, ownerMh[o[0]] || 0)); });
-  depts.forEach((d, i) => { own.set('D', i + 2, V(d)); own.set('E', i + 2, Fm(`SUMIF(${TB}$G:$G,D${i + 2},${TB}$S:$S)`, deptMh[d] || 0)); });
-
-  // Cover
-  const cover = makeSheet();
-  [['Customer Name', state.meta.customer], ['JOB ID', state.meta.jobId], ['Project Name', state.meta.project], ['Date', state.meta.date], ['Remark', remarkText(state.meta)]]
-    .forEach((p, i) => { cover.set('A', i + 1, V(p[0], BOLD)); cover.set('B', i + 1, V(p[1] || '')); });
+  const totalRow = r + 1, nonChargeRow = r + 2, hpdRow = r + 3, mdRow = r + 4;
+  const totalMd = ceilTo((allMh - nonChargeMh) / cfg.hpd, 0.5);
+  est.set('D', totalRow, Fm(`SUM(${TB}$S$2:$S$${last})`, allMh, BOLD)); est.set('E', totalRow, V('<-- Total Man-Hours'));
+  est.set('D', nonChargeRow, Fm(`SUMIFS(${TB}$S$2:$S$${last},${TB}$T$2:$T$${last},FALSE)`, nonChargeMh)); est.set('E', nonChargeRow, V('<-- Non Chargeable'));
+  est.set('D', hpdRow, V(num(cfg.hpd))); est.set('E', hpdRow, V('hours = 1 Man-day'));
+  est.set('D', mdRow, Fm(`CEILING((D${totalRow}-D${nonChargeRow})/D${hpdRow},0.5)`, totalMd, BOLD)); est.set('E', mdRow, V('Total Man-days', BOLD));
 
   const sheets = [
-    ['Cover', sheetXml(cover, { widths: [18, 50] })],
-    ['Estimate Man-day (Auto Fill)', sheetXml(est, { widths: [8, 44, 14, 14, 18], freeze: true })],
-    ['Task Breakdown', sheetXml(tb, { widths: [6, 14, 48, 36, 11, 16, 8, 30, 24, 7, 7, 7, 12, 12, 12, 10, 10, 8, 12, 12], freeze: true, validations: tbValid })],
-    ['List', sheetXml(list, { widths: [26, 14, 3, 12, 8, 3, 34, 10, 3, 3, 3, 18, 12, 3, 40, 11] })],
-    ['Task Owner & Dept MH', sheetXml(own, { widths: [20, 12, 3, 12, 12] })]
+    { name: 'Estimate Man-day  (Auto Fill)', xml: sheetXml(est, { widths: [8, 42, 58, 14, 20], freeze: true }) },
+    { name: 'Task Breakdown', xml: sheetXml(tb, { widths: [14, 24, 48, 36, 11, 16, 8, 30, 24, 7, 7, 7, 12, 12, 12, 10, 10, 8, 12, 12], freeze: true, validations: tbValid }) },
+    { name: 'List', xml: sheetXml(list, { widths: [26, 14, 3, 12, 8, 3, 34, 10, 3, 3, 3, 18, 12, 3, 40, 11] }), hidden: true }
   ];
-  const planRows = (state.plan && state.plan.rows) || [];
-  if (planRows.length) {
-    const ps = makeSheet();
-    let no = 0;
-    head(ps, [['A', 'No'], ['B', 'Task'], ['C', 'Status'], ['D', 'Progress %'], ['E', 'PIC'], ['F', 'Start'], ['G', 'End'], ['H', 'Days']]);
-    planRows.forEach((p, i) => {
-      const row = i + 2;
-      if (p.type === 'group') { 'ACDEFGH'.split('').forEach(c => ps.set(c, row, V(' ', SEC))); ps.set('B', row, V(p.name || ' ', SEC)); return; }
-      ps.set('A', row, V(++no)); ps.set('B', row, V(p.name)); ps.set('C', row, V(p.status));
-      ps.set('D', row, V(Math.min(100, Math.max(0, num(p.progress))) / 100, PCT)); ps.set('E', row, V(p.pic));
-      ps.set('F', row, V(planStart(p, state.plan))); ps.set('G', row, V(planEnd(p, state.plan))); ps.set('H', row, V(planDays(p)));
-    });
-    sheets.push(['Project Plan', sheetXml(ps, { widths: [6, 52, 14, 12, 16, 12, 12, 8], freeze: true })]);
-  }
   const xmlHead = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
   const pkg = 'http://schemas.openxmlformats.org/package/2006/', doc = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships', main = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
   const files = [
@@ -851,7 +659,7 @@ function buildXlsx(state) {
       sheets.map((s, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('') + '</Types>' },
     { name: '_rels/.rels', text: xmlHead + `<Relationships xmlns="${pkg}relationships"><Relationship Id="rId1" Type="${doc}/officeDocument" Target="xl/workbook.xml"/></Relationships>` },
     { name: 'xl/workbook.xml', text: xmlHead + `<workbook xmlns="${main}" xmlns:r="${doc}"><bookViews><workbookView/></bookViews><sheets>` +
-      sheets.map((s, i) => `<sheet name="${xmlEsc(s[0])}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join('') + '</sheets><calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>' },
+      sheets.map((s, i) => `<sheet name="${xmlEsc(s.name)}" sheetId="${i + 1}"${s.hidden ? ' state="hidden"' : ''} r:id="rId${i + 1}"/>`).join('') + '</sheets><calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>' },
     { name: 'xl/_rels/workbook.xml.rels', text: xmlHead + `<Relationships xmlns="${pkg}relationships">` +
       sheets.map((s, i) => `<Relationship Id="rId${i + 1}" Type="${doc}/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join('') +
       `<Relationship Id="rId${sheets.length + 1}" Type="${doc}/styles" Target="styles.xml"/></Relationships>` },
@@ -860,11 +668,11 @@ function buildXlsx(state) {
       '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
       '<cellXfs count="5"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/><xf numFmtId="9" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="0" fontId="1" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1"/></cellXfs>' +
       '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>' }
-  ].concat(sheets.map((s, i) => ({ name: `xl/worksheets/sheet${i + 1}.xml`, text: s[1] })));
+  ].concat(sheets.map((s, i) => ({ name: `xl/worksheets/sheet${i + 1}.xml`, text: s.xml })));
   return zipStore(files);
 }
 
-if (typeof module !== 'undefined') module.exports = { applyOps, diffState, opKey, normalize, blankState, newTask, calcTask, buildQuote, quoteText, buildXlsx, buildPlan, planStats, planEnd, addWorkdays, workdayDiff, nextWorkday, ceilTo, textToSections, sectionsToText, textToPairs, SEP };
+if (typeof module !== 'undefined') module.exports = { applyOps, diffState, opKey, normalize, blankState, newTask, calcTask, buildQuote, quoteText, buildXlsx, ceilTo, textToSections, sectionsToText, textToPairs, SEP };
 
 // ---------- UI ----------
 if (typeof document !== 'undefined') (function () {
@@ -896,176 +704,8 @@ if (typeof document !== 'undefined') (function () {
     else alert(title + '\n' + text);
   }
 
-  // Google Identity Services: access tokens stay in memory and are never written to local storage.
-  const GOOGLE_CLIENT_ID = '144543484972-9smamjq725g58md6elhp79cuifalip6.apps.googleusercontent.com';
-  const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
-  let driveToken = '', driveTokenExpires = 0, driveTokenClient = null, driveFolderId = '', driveFileId = '', driveUser = null, authMode = '';
-  function getGoogleAccessToken(prompt) {
-    return new Promise((resolve, reject) => {
-      try {
-        if (!window.google || !google.accounts || !google.accounts.oauth2) throw new Error('Google Sign-In ยังโหลดไม่เสร็จ กรุณาลองอีกครั้ง');
-        driveTokenClient = google.accounts.oauth2.initTokenClient({
-          client_id: GOOGLE_CLIENT_ID, scope: DRIVE_SCOPE, prompt,
-          callback: response => {
-            if (response.error || !response.access_token) return reject(new Error(response.error_description || response.error || 'Google ไม่อนุญาตให้เข้าใช้'));
-            driveToken = response.access_token;
-            driveTokenExpires = Date.now() + (Number(response.expires_in) || 3600) * 1000;
-            resolve(driveToken);
-          },
-          error_callback: error => reject(new Error(error.message || 'เปิดหน้าต่าง Google ไม่สำเร็จ'))
-        });
-        driveTokenClient.requestAccessToken({ prompt });
-      } catch (error) { reject(error); }
-    });
-  }
-  function completeGoogleLogin(response) {
-    try {
-      const encoded = response.credential.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-      const payload = JSON.parse(decodeURIComponent(Array.from(atob(encoded), c => '%' + c.charCodeAt(0).toString(16).padStart(2, '0')).join('')));
-      driveUser = { email: payload.email || '', name: payload.name || '' };
-      authMode = 'google';
-      $('#driveAccount').textContent = driveUser.email || driveUser.name;
-      $('#btnLogout').hidden = false; $('#btnDriveSave').hidden = false; $('#btnDriveTab').hidden = false;
-      $('#authGate').hidden = true;
-      $('#authStatus').textContent = '';
-      if (joinId && location.protocol !== 'file:') joinFromLink();
-    } catch (error) {
-      $('#authStatus').textContent = 'เข้าสู่ระบบไม่สำเร็จ กรุณาลองอีกครั้ง';
-    }
-  }
-  function loginLocal() {
-    authMode = 'local';
-    $('#driveAccount').textContent = 'Local';
-    $('#btnLogout').hidden = false; $('#btnDriveSave').hidden = true; $('#btnDriveTab').hidden = true;
-    $('#authGate').hidden = true;
-    showTab('quote');
-    if (joinId && location.protocol !== 'file:') joinFromLink();
-  }
-  function renderGoogleButton(attempt = 0) {
-    if (!window.google || !google.accounts || !google.accounts.id) {
-      if (attempt < 40) setTimeout(() => renderGoogleButton(attempt + 1), 150);
-      else $('#authStatus').textContent = 'โหลด Google Sign-In ไม่สำเร็จ กรุณารีเฟรชหน้า';
-      return;
-    }
-    google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: completeGoogleLogin });
-    google.accounts.id.renderButton($('#googleSignInButton'), { type: 'standard', theme: 'outline', size: 'large', text: 'signin_with', shape: 'rectangular', logo_alignment: 'left', width: 300 });
-  }
-  if (document.readyState === 'complete') renderGoogleButton();
-  else window.addEventListener('load', renderGoogleButton, { once: true });
-  async function ensureDriveAccess() {
-    if (driveToken && Date.now() < driveTokenExpires - 60000) return driveToken;
-    return getGoogleAccessToken('');
-  }
-  async function driveFetch(url, options = {}) {
-    const token = await ensureDriveAccess();
-    const response = await fetch(url, Object.assign({}, options, { headers: Object.assign({}, options.headers || {}, { authorization: 'Bearer ' + token }) }));
-    if (!response.ok) {
-      let message = 'Google Drive ตอบกลับ HTTP ' + response.status;
-      try { const body = await response.json(); message = body.error && body.error.message || message; } catch (e) { /* keep HTTP message */ }
-      throw new Error(message);
-    }
-    return response;
-  }
-  async function getDriveFolder() {
-    if (driveFolderId) return driveFolderId;
-    const q = "mimeType='application/vnd.google-apps.folder' and name='TRB-Manday-Estimator' and 'root' in parents and trashed=false";
-    const url = 'https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(q) + '&fields=files(id,name)&pageSize=100';
-    const r = await driveFetch(url);
-    const data = await r.json();
-    if (data.files && data.files.length) driveFolderId = data.files[0].id;
-    else {
-      const created = await driveFetch('https://www.googleapis.com/drive/v3/files?fields=id', {
-        method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ name: 'TRB-Manday-Estimator', mimeType: 'application/vnd.google-apps.folder' })
-      });
-      driveFolderId = (await created.json()).id;
-    }
-    return driveFolderId;
-  }
-  function driveFilename() {
-    const base = quoteTitle(S.meta).replace(/[\\/:*?"<>|]+/g, ' ').replace(/[\r\n]+/g, ' ').trim() || 'Man-Day Estimation';
-    return base.slice(0, 120) + '.json';
-  }
-  async function saveToDrive() {
-    const status = $('#driveStatus');
-    try {
-      status.textContent = 'กำลังบันทึก...';
-      const folder = await getDriveFolder(), boundary = 'manday_' + newId();
-      const metadata = { name: driveFilename(), mimeType: 'application/json' };
-      if (!driveFileId) metadata.parents = [folder];
-      const payload = JSON.stringify(S, null, 2);
-      const body = '--' + boundary + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n' + JSON.stringify(metadata) +
-        '\r\n--' + boundary + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n' + payload + '\r\n--' + boundary + '--';
-      const url = 'https://www.googleapis.com/upload/drive/v3/files' + (driveFileId ? '/' + encodeURIComponent(driveFileId) : '') + '?uploadType=multipart&fields=id,name,modifiedTime';
-      const r = await driveFetch(url, { method: driveFileId ? 'PATCH' : 'POST', headers: { 'content-type': 'multipart/related; boundary=' + boundary }, body });
-      const saved = await r.json(); driveFileId = saved.id;
-      status.textContent = 'บันทึกแล้ว: ' + saved.name;
-      toast('บันทึกใน Google Drive แล้ว');
-      if (curTab === 'drive') renderDriveList();
-    } catch (error) {
-      status.textContent = '';
-      showError('บันทึกใน Drive ไม่สำเร็จ', error.message);
-    }
-  }
-  async function saveExcelToDrive() {
-    const status = $('#driveStatus');
-    try {
-      status.textContent = 'กำลังสร้างและบันทึก Excel...';
-      const folder = await getDriveFolder(), boundary = 'manday_' + newId();
-      const metadata = { name: driveFilename().replace(/\.json$/i, '.xlsx'), mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', parents: [folder] };
-      const prefix = '--' + boundary + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n' + JSON.stringify(metadata) +
-        '\r\n--' + boundary + '\r\nContent-Type: ' + metadata.mimeType + '\r\n\r\n';
-      const suffix = '\r\n--' + boundary + '--';
-      const file = new Blob([prefix, buildXlsx(S), suffix], { type: 'multipart/related; boundary=' + boundary });
-      const url = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name';
-      const response = await driveFetch(url, { method: 'POST', headers: { 'content-type': 'multipart/related; boundary=' + boundary }, body: file });
-      const saved = await response.json();
-      status.textContent = 'บันทึกแล้ว: ' + saved.name;
-      toast('บันทึก Excel ใน Google Drive แล้ว');
-    } catch (error) {
-      status.textContent = '';
-      showError('บันทึก Excel ใน Drive ไม่สำเร็จ', error.message);
-    }
-  }
-  async function renderDriveList() {
-    const box = $('#driveList'), status = $('#driveStatus');
-    box.innerHTML = '<div class="tempty">กำลังโหลดรายการ...</div>';
-    try {
-      const folder = await getDriveFolder();
-      const q = "'" + folder + "' in parents and mimeType='application/json' and trashed=false";
-      const url = 'https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(q) + '&orderBy=modifiedTime desc&pageSize=100&fields=files(id,name,modifiedTime,size)';
-      const data = await (await driveFetch(url)).json();
-      const files = data.files || [];
-      box.innerHTML = files.length ? files.map(f => `<div class="drive-file"><div>${esc(f.name)}<small>แก้ไขล่าสุด ${esc(f.modifiedTime ? new Date(f.modifiedTime).toLocaleString() : '')}</small></div><button class="btn" data-drive-open="${esc(f.id)}">เปิด</button></div>`).join('') : '<div class="tempty">ยังไม่มีแบบฟอร์มที่บันทึกไว้</div>';
-      status.textContent = files.length + ' ไฟล์ใน TRB-Manday-Estimator';
-    } catch (error) {
-      box.innerHTML = '<div class="tempty">โหลดรายการไม่สำเร็จ</div>';
-      status.textContent = error.message;
-    }
-  }
-  async function openDriveFile(id) {
-    if (room) { showError('เปิดไฟล์ไม่ได้', 'กรุณาออกจากห้องแชร์ก่อน เพื่อไม่ให้แทนที่ข้อมูลของทุกคน'); return; }
-    try {
-      const response = await driveFetch('https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(id) + '?alt=media');
-      const data = await response.json();
-      S = normalize(data); save(); driveFileId = id; showTab('quote'); toast('เปิดแบบฟอร์มจาก Drive แล้ว');
-    } catch (error) { showError('เปิดไฟล์ไม่สำเร็จ', error.message); }
-  }
-  $('#btnDriveSave').addEventListener('click', saveToDrive);
-  $('#btnLocalLogin').addEventListener('click', loginLocal);
-  $('#btnDriveRefresh').addEventListener('click', renderDriveList);
-  $('#btnDriveExcel').addEventListener('click', saveExcelToDrive);
-  $('#driveList').addEventListener('click', e => { const b = e.target.closest('[data-drive-open]'); if (b) openDriveFile(b.dataset.driveOpen); });
-  $('#btnLogout').addEventListener('click', () => {
-    if (authMode === 'google' && driveToken && window.google && google.accounts && google.accounts.oauth2) google.accounts.oauth2.revoke(driveToken, () => {});
-    driveToken = ''; driveTokenExpires = 0; driveFolderId = ''; driveFileId = ''; driveUser = null;
-    if (window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect();
-    authMode = '';
-    $('#driveAccount').textContent = ''; $('#btnLogout').hidden = true; $('#btnDriveSave').hidden = true; $('#btnDriveTab').hidden = true; $('#authGate').hidden = false;
-  });
-
   // ----- tabs -----
-  const renderers = { quote: renderQuote, tasks: renderTasks, plan: renderPlan, owners: renderOwners, drive: renderDriveList, settings: renderSettings };
+  const renderers = { quote: renderQuote, tasks: renderTasks, settings: renderSettings };
   function showTab(name) {
     comboClose();
     curTab = name;
@@ -1152,14 +792,13 @@ if (typeof document !== 'undefined') (function () {
     const names = list => list.map(r => ({ v: r[0], t: r[0] }));
     if (kind === 'act') return [].concat(...S.cfg.sections.map(s => s.items.map(it => ({ v: s.name + SEP + it, t: it, g: s.name }))));
     if (kind === 'owner' || kind === 'pic') return S.cfg.owners.map(o => ({ v: o[0], t: o[0], d: o[1] }));
-    if (kind === 'status') return PLAN_STATUS.map(x => ({ v: x, t: x }));
     if (kind === 'role') return names(S.cfg.roles);
     if (kind === 'sit') return names(S.cfg.situations);
     if (kind === 'risk') return S.cfg.risks.map(r => ({ v: String(r[1] / 100), t: fmt(r[1]) + '% ' + r[0] }));
-    return ['0.25', '0.5', '1'].map(x => ({ v: x, t: x }));   // mdStep
+    return [];
   }
   function sameVal(kind, a, b) {
-    return kind === 'risk' || kind === 'mdStep' ? Math.abs(num(a) - num(b)) < 1e-9 : String(a) === String(b);
+    return kind === 'risk' ? Math.abs(num(a) - num(b)) < 1e-9 : String(a) === String(b);
   }
   function comboLabel(kind, val) {
     const hit = comboOptions(kind).find(o => sameVal(kind, o.v, val));
@@ -1227,14 +866,6 @@ if (typeof document !== 'undefined') (function () {
     comboClose();
     if (input.dataset.cfg) return;            // settings fields are read when "บันทึก" is pressed
     input.dataset.val = o.v;
-    const prow = input.closest('.prow');
-    if (prow) {                                // Project Plan row
-      const r = S.plan.rows.find(x => x.id === prow.dataset.id);
-      r[kind] = o.v;
-      if (kind === 'status' && o.v === 'Completed') { r.progress = 100; $('[data-p="progress"]', prow).value = 100; }
-      save(); refreshPlan();
-      return;
-    }
     const row = input.closest('.trow');
     if (!row) return;
     const t = S.tasks.find(x => x.id === row.dataset.id);
@@ -1271,7 +902,7 @@ if (typeof document !== 'undefined') (function () {
     const n = f => `<input class="cell num" type="number" min="0" step="0.25" data-f="${f}" value="${esc(t[f])}" placeholder="–">`;
     return `<div class="trow${closedRows.has(t.id) ? '' : ' open'}" data-id="${t.id}">
       <div class="tgrid tmain">
-        <span class="idx">${i + 1}</span>
+        <input class="cell" data-f="taskNo" value="${esc(t.taskNo || ('Task-' + String(i + 1).padStart(3, '0')))}" placeholder="Task-001">
         ${comboHtml('act', t.act, 'cell ', 'เลือก Activity')}
         <input class="cell" data-f="desc" value="${esc(t.desc)}" placeholder="รายละเอียดงาน">
         ${comboHtml('owner', t.owner, 'cell ')}
@@ -1279,11 +910,12 @@ if (typeof document !== 'undefined') (function () {
         ${comboHtml('risk', t.risk, 'cell ')}
         <span class="flag" data-c="flag" title="SD ≥ 50% ของ MH: ความไม่แน่นอนสูง ควรพิจารณาเพิ่ม Risk"></span>
         <span class="final num" data-c="final"></span>
-        <label class="nccell" title="ไม่คิดเงิน: ไม่นับในใบสรุปให้ Sale"><input type="checkbox" data-f="nc" ${t.nc ? 'checked' : ''}></label>
+        <label class="nccell" title="คิดเป็นค่าใช้จ่ายและรวมใน Estimate"><input type="checkbox" data-f="chargeable" ${t.nc ? '' : 'checked'}></label>
         <button class="icon" data-toggle title="ซ่อน / แสดงรายละเอียด">▾</button>
         <button class="icon del" data-del title="ลบงานนี้">×</button>
       </div>
       <div class="tmore">
+        <label>CR / Scope <input class="cell" data-f="scope" value="${esc(t.scope)}" placeholder="ขอบเขตงาน / CR"></label>
         <label>Role ${comboHtml('role', t.role, '')}</label>
         <label>Situation ${comboHtml('sit', t.sit, '')}</label>
         <span>Dept <b data-c="dept"></b></span>
@@ -1309,10 +941,10 @@ if (typeof document !== 'undefined') (function () {
     row.classList.toggle('nc', !!t.nc);
   }
   function fillTotals() {
-    let raw = 0, fin = 0;
-    S.tasks.forEach(t => { const c = calcTask(t, S.cfg); raw += c.raw; fin += c.final; });
+    let raw = 0, all = 0, fin = 0;
+    S.tasks.forEach(t => { const c = calcTask(t, S.cfg); raw += c.raw; all += c.final; if (!t.nc) fin += c.final; });
     $('#sumRaw').textContent = 'raw ' + fmt(raw) + ' MH';
-    $('#sumFinal').textContent = fmt(fin) + ' MH · ' + fmt(fin / S.cfg.hpd) + ' MD';
+    $('#sumFinal').textContent = fmt(fin) + ' chargeable MH · ' + fmt(ceilTo(fin / S.cfg.hpd, 0.5)) + ' MD' + (all !== fin ? ' · ทั้งหมด ' + fmt(all) + ' MH' : '');
     $('#btnExpand').textContent = S.tasks.length && S.tasks.every(t => !closedRows.has(t.id)) ? 'ซ่อนรายละเอียดทั้งหมด' : 'แสดงรายละเอียดทั้งหมด';
   }
   function renderTasks() {
@@ -1325,7 +957,8 @@ if (typeof document !== 'undefined') (function () {
     const el = e.target, row = el.closest('.trow');
     if (!el.dataset.f || !row) return;
     const t = S.tasks.find(x => x.id === row.dataset.id);
-    t[el.dataset.f] = el.type === 'checkbox' ? el.checked : (el.dataset.f === 'risk' ? num(el.value) : el.value);
+    if (el.dataset.f === 'chargeable') t.nc = !el.checked;
+    else t[el.dataset.f] = el.dataset.f === 'risk' ? num(el.value) : el.value;
     fillCalc(row, t); fillTotals(); save();
   });
   $('#taskList').addEventListener('click', e => {
@@ -1351,154 +984,12 @@ if (typeof document !== 'undefined') (function () {
   });
   $('#btnAdd').addEventListener('click', () => {
     const last = S.tasks[S.tasks.length - 1], t = newTask();
-    if (last) { t.act = last.act; t.owner = last.owner; t.role = last.role; }
+    const maxNo = S.tasks.reduce((m, x) => Math.max(m, +(String(x.taskNo || '').match(/\d+/) || [0])[0]), 0);
+    t.taskNo = 'Task-' + String(maxNo + 1).padStart(3, '0');
+    if (last) { t.act = last.act; t.owner = last.owner; t.role = last.role; t.scope = last.scope; }
     S.tasks.push(t); save(); renderTasks();
     const rows = $$('#taskList .trow'); $('[data-f="desc"]', rows[rows.length - 1]).focus();
   });
-
-  // ----- project plan -----
-  const STATUS_CLASS = { 'Not Start': 's-idle', 'On Going': 's-run', 'At Risk': 's-risk', 'Delay': 's-late', 'Pending': 's-idle', 'Testing': 's-test', 'Completed': 's-done' };
-  const shortD = s => (validD(s) ? +s.slice(8) + ' ' + MONTHS[+s.slice(5, 7) - 1] : '–');
-  function planRowHtml(r, n) {
-    const track = '<div class="ptrack"><div class="pbar"><i></i></div></div>';
-    const del = '<button class="icon del" data-pdel title="ลบรายการนี้">×</button>';
-    if (r.type === 'group') return `<div class="prow pgrid grp" data-id="${r.id}">
-      <span class="idx"></span><input class="cell" data-p="name" value="${esc(r.name)}" placeholder="หัวข้อ">
-      <span></span><span></span><span></span><span></span><span></span><span class="pend" data-c="end"></span>${track}${del}</div>`;
-    return `<div class="prow pgrid" data-id="${r.id}">
-      <span class="idx">${n}</span>
-      <input class="cell" data-p="name" value="${esc(r.name)}" placeholder="ชื่องาน">
-      ${comboHtml('pic', r.pic, 'cell ')}
-      ${comboHtml('status', r.status, 'cell ')}
-      <input class="cell num" type="number" min="0" max="100" step="5" data-p="progress" value="${esc(r.progress)}">
-      <input class="cell" type="date" data-p="start" value="${esc(planStart(r, S.plan))}">
-      <input class="cell num" type="number" min="1" step="1" data-p="days" value="${esc(r.days)}">
-      <span class="pend" data-c="end"></span>${track}${del}</div>`;
-  }
-  function renderPlan() {
-    $('#planStart').value = validD(S.plan.start) ? S.plan.start : today();
-    let n = 0;
-    $('#planList').innerHTML = S.plan.rows.map(r => planRowHtml(r, r.type === 'group' ? '' : ++n)).join('') ||
-      '<div class="tempty">ยังไม่มีแผน กด "สร้างจากงานที่กรอกอยู่" หรือ "สร้างจากไฟล์ JSON"</div>';
-    refreshPlan();
-  }
-  // Recomputes end dates, bars, month header and summary without rebuilding the inputs
-  function refreshPlan() {
-    const st = planStats(S.plan), rows = S.plan.rows, card = $('#planCard');
-    $('#planSummary').textContent = st ? `${shortD(st.min)} → ${shortD(st.max)} · ${st.workdays} วันทำการ · ${st.count} งาน · Progress ${fmt(st.avg)}%` : '';
-    let head = '';
-    if (st) {
-      const d = parseD(st.min), base = dayNum(st.min);
-      while (fmtD(d) <= st.max) {
-        const from = dayNum(fmtD(d)), label = MONTHS[d.getUTCMonth()];
-        d.setUTCMonth(d.getUTCMonth() + 1, 1);
-        const to = Math.min(dayNum(fmtD(d)) - 1, dayNum(st.max)), w = (to - from + 1) / st.total * 100;
-        head += `<span style="left:${((from - base) / st.total * 100).toFixed(3)}%;width:${w.toFixed(3)}%">${w > 7 ? label : ''}</span>`;
-      }
-    }
-    $('#planMonths').innerHTML = head;
-    const t = today(), hasToday = !!st && t >= st.min && t <= st.max;
-    card.classList.toggle('has-today', hasToday);
-    if (hasToday) card.style.setProperty('--today', ((dayNum(t) - dayNum(st.min) + .5) / st.total * 100).toFixed(3) + '%');
-    $$('#planList .prow').forEach((el, i) => {
-      const r = rows[i], bar = $('.pbar', el);
-      let a, b, prog, cls;
-      if (r.type === 'group') {
-        const kids = [];
-        for (let j = i + 1; j < rows.length && rows[j].type !== 'group'; j++) kids.push(rows[j]);
-        bar.hidden = !kids.length;
-        if (!kids.length) { $('[data-c="end"]', el).textContent = ''; return; }
-        a = kids.map(k => planStart(k, S.plan)).sort()[0];
-        b = kids.map(k => planEnd(k, S.plan)).sort().pop();
-        prog = kids.reduce((s, k) => s + Math.min(100, Math.max(0, num(k.progress))), 0) / kids.length;
-        cls = 's-grp';
-      } else {
-        a = planStart(r, S.plan); b = planEnd(r, S.plan);
-        prog = Math.min(100, Math.max(0, num(r.progress)));
-        cls = STATUS_CLASS[r.status] || 's-idle';
-      }
-      $('[data-c="end"]', el).textContent = shortD(b);
-      bar.className = 'pbar ' + cls;
-      bar.style.left = ((dayNum(a) - dayNum(st.min)) / st.total * 100).toFixed(3) + '%';
-      bar.style.width = ((dayNum(b) - dayNum(a) + 1) / st.total * 100).toFixed(3) + '%';
-      bar.firstChild.style.width = prog + '%';
-      bar.title = shortD(a) + ' → ' + shortD(b) + ' · ' + fmt(prog) + '%';
-    });
-  }
-  function setPlan(rows, source) {
-    const apply = () => { S.plan.rows = rows; save(); renderPlan(); toast('สร้าง Project Plan จาก' + source + 'แล้ว'); };
-    if (!rows.length) { showError('สร้างแผนไม่ได้', source + 'ยังไม่มีงานที่กรอกชั่วโมง (O / M / P)'); return; }
-    if (S.plan.rows.length) askConfirm('แทนที่แผนเดิม?', 'แผนที่มีอยู่ ' + S.plan.rows.length + ' รายการ รวมถึง Status และ Progress ที่กรอกไว้ จะถูกแทนที่', 'แทนที่').then(ok => { if (ok) apply(); });
-    else apply();
-  }
-  $('#btnPlanGen').addEventListener('click', () => setPlan(buildPlan(S, S.plan.start), 'งานที่กรอกอยู่'));
-  $('#btnPlanImport').addEventListener('click', () => $('#filePlan').click());
-  $('#filePlan').addEventListener('change', e => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      try { setPlan(buildPlan(normalize(JSON.parse(reader.result)), S.plan.start), 'ไฟล์ ' + file.name + ' '); }
-      catch (err) { showError('ไฟล์นี้อ่านไม่ได้', err.message); }
-      e.target.value = '';
-    };
-    reader.readAsText(file);
-  });
-  // Moving the project start shifts every row by the same number of working days
-  $('#planStart').addEventListener('change', e => {
-    if (!validD(e.target.value)) return;
-    const from = validD(S.plan.start) ? S.plan.start : today(), delta = workdayDiff(from, e.target.value);
-    S.plan.rows.forEach(r => { if (r.type !== 'group') r.start = addWorkdays(planStart(r, S.plan), delta); });
-    S.plan.start = e.target.value;
-    save(); renderPlan();
-  });
-  $('#planList').addEventListener('input', e => {
-    const el = e.target, row = el.closest('.prow');
-    if (!el.dataset.p || !row) return;
-    const r = S.plan.rows.find(x => x.id === row.dataset.id);
-    if (el.dataset.p === 'start' && !validD(el.value)) return;   // half-typed date
-    r[el.dataset.p] = el.value;
-    save(); refreshPlan();
-  });
-  $('#planList').addEventListener('click', e => {
-    if (!e.target.matches('[data-pdel]')) return;
-    const id = e.target.closest('.prow').dataset.id, r = S.plan.rows.find(x => x.id === id);
-    const remove = () => { S.plan.rows = S.plan.rows.filter(x => x.id !== id); save(); renderPlan(); };
-    if (r.name) askConfirm('ลบรายการนี้?', r.name, 'ลบ').then(ok => { if (ok) remove(); });
-    else remove();
-  });
-  $('#btnPlanAdd').addEventListener('click', () => {
-    const st = planStats(S.plan);
-    S.plan.rows.push({ id: newId(), type: 'task', name: '', pic: '', start: st ? addWorkdays(st.max, 1) : planStart({}, S.plan), days: 1, status: 'Not Start', progress: 0 });
-    save(); renderPlan();
-    const rows = $$('#planList .prow'); $('[data-p="name"]', rows[rows.length - 1]).focus();
-  });
-  $('#btnPlanGroup').addEventListener('click', () => {
-    S.plan.rows.push({ id: newId(), type: 'group', name: '' });
-    save(); renderPlan();
-    const rows = $$('#planList .prow'); $('[data-p="name"]', rows[rows.length - 1]).focus();
-  });
-
-  // ----- 3. owners -----
-  function renderOwners() {
-    const byOwner = {}, byDept = {};
-    let total = 0;
-    S.tasks.forEach(t => {
-      const c = calcTask(t, S.cfg);
-      if (!c.final) return;
-      total += c.final;
-      const o = t.owner || '(ยังไม่ระบุ)', d = c.dept || '(ยังไม่ระบุ)';
-      byOwner[o] = (byOwner[o] || 0) + c.final;
-      byDept[d] = (byDept[d] || 0) + c.final;
-    });
-    const table = (title, map) => `<tr><th>${title}</th><th class="num">Total MH</th><th class="num">MD</th></tr>` +
-      (Object.keys(map).sort((a, b) => map[b] - map[a]).map(k =>
-        `<tr><td>${esc(k)}</td><td class="num">${fmt(map[k])}</td><td class="num">${fmt(map[k] / S.cfg.hpd)}</td></tr>`).join('') ||
-        '<tr><td colspan="3" class="hint">ยังไม่มีข้อมูล</td></tr>') +
-      `<tr><td class="strong">รวม</td><td class="num strong">${fmt(total)}</td><td class="num strong">${fmt(total / S.cfg.hpd)}</td></tr>`;
-    $('#ownerTable').innerHTML = table('Task Owner', byOwner);
-    $('#deptTable').innerHTML = table('Dept', byDept);
-  }
 
   // ----- 4. settings -----
   // Read-only until Edit is pressed; nothing is applied until Save
@@ -1528,7 +1019,6 @@ if (typeof document !== 'undefined') (function () {
   $('#btnNew').addEventListener('click', () => {
     askConfirm('เริ่มโปรเจกต์ใหม่?', (room ? 'คุณอยู่ในห้องแชร์: งานจะถูกล้างสำหรับทุกคนในห้อง ' : '') + 'งานทั้งหมดจะถูกล้าง (การตั้งค่ายังอยู่) ถ้ายังต้องใช้ให้ Export เก็บไว้ก่อน', 'ล้างและเริ่มใหม่').then(ok => {
       if (!ok) return;
-      driveFileId = '';
       const cfg = S.cfg; S = blankState(); S.cfg = cfg;
       save(); showTab('quote');
     });
@@ -1560,7 +1050,7 @@ if (typeof document !== 'undefined') (function () {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
-      try { S = normalize(JSON.parse(reader.result)); driveFileId = ''; save(); showTab('quote'); toast('Import เรียบร้อย'); }
+      try { S = normalize(JSON.parse(reader.result)); save(); showTab('quote'); toast('Import เรียบร้อย'); }
       catch (err) { showError('ไฟล์นี้อ่านไม่ได้', err.message); }
       e.target.value = '';
     };
@@ -1681,7 +1171,6 @@ if (typeof document !== 'undefined') (function () {
   }
   function enterRoom(id, res) {
     room = id; version = res.version; pending = []; users = res.users || []; lastBeat = Date.now();
-    driveFileId = '';
     S = normalize(res.doc); base = clone(S);
     history.replaceState(null, '', location.pathname + '?room=' + id);
     setSync(true);
@@ -1715,7 +1204,7 @@ if (typeof document !== 'undefined') (function () {
     });
   });
   document.addEventListener('focusin', e => {
-    const row = e.target.closest && e.target.closest('.trow, .prow');
+    const row = e.target.closest && e.target.closest('.trow');
     me.focus = row ? curTab + ':' + row.dataset.id : '';
   });
   document.addEventListener('visibilitychange', () => { if (room && !document.hidden) { clearTimeout(syncTimer); syncTimer = setTimeout(tick, 200); } });
@@ -1731,6 +1220,7 @@ if (typeof document !== 'undefined') (function () {
   renderPresence();
 
   showTab('quote');
+  if (joinId && location.protocol !== 'file:') joinFromLink();
 })();
 </script>
 </body>

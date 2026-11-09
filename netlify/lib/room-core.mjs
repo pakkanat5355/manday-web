@@ -11,15 +11,13 @@ const json = (body, status = 200) =>
 // Keep in sync with applyOps() in public/index.html
 export function applyOps(doc, ops) {
   const bad = k => k === '__proto__' || k === 'constructor' || k === 'prototype';
-  const listOf = n => (n === 'tasks' ? doc.tasks : n === 'plan' ? doc.plan.rows : null);
+  const listOf = n => (n === 'tasks' ? doc.tasks : null);
   ops.forEach(op => {
     if (!op || typeof op !== 'object') return;
     if (op.t === 'meta' || op.t === 'cfg' || op.t === 'sec') {
       const target = op.t === 'meta' ? doc.meta : op.t === 'cfg' ? doc.cfg : doc.secOpt;
       if (typeof op.k !== 'string' || bad(op.k)) return;
       if (op.v === undefined) delete target[op.k]; else target[op.k] = op.v;
-    } else if (op.t === 'planStart') {
-      doc.plan.start = op.v;
     } else {
       const list = listOf(op.list);
       if (!list) return;
@@ -45,7 +43,7 @@ function validDoc(d) {
 }
 function shapeDoc(d) {
   if (!d.secOpt || typeof d.secOpt !== 'object') d.secOpt = {};
-  if (!d.plan || !Array.isArray(d.plan.rows)) d.plan = { start: '', rows: [] };
+  delete d.plan;
   return d;
 }
 function cleanClient(c) {
